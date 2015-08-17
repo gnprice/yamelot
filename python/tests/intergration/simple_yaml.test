@@ -1,0 +1,21 @@
+bob:
+    age: 30
+    jobs:
+        - fireman
+joe:
+    age: 60
+    jobs:
+        - policeman
+
+================================================================================
+
+{
+    "bob": {
+        "age": 30,
+        "jobs": ["fireman"]
+    },
+    "joe": {
+        "age": 60,
+        "jobs": ["policeman"]
+    }
+}

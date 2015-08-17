@@ -1,0 +1,33 @@
+DEFAULTS: &DEFAULTS
+    color: red
+
+body:
+    height: 400
+    <<: *DEFAULTS
+
+h1:
+    height: 30
+    color: green
+    <<: *DEFAULTS
+
+h2:
+    <<: *DEFAULTS
+
+================================================================================
+
+{
+    "DEFAULTS": {
+        "color": "red"
+    },
+    "body": {
+        "height": 400,
+        "color": "red"
+    },
+    "h1": {
+        "height": 30,
+        "color": "green"
+    },
+    "h2": {
+        "color": "red"
+    }
+}
