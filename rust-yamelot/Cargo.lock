@@ -1,0 +1,48 @@
+[root]
+name = "yamelot"
+version = "0.1.0"
+dependencies = [
+ "plex 0.0.1 (git+https://github.com/goffrie/plex)",
+]
+
+[[package]]
+name = "bit-set"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+dependencies = [
+ "bit-vec 0.4.1 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "bit-vec"
+version = "0.4.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+
+[[package]]
+name = "lalr"
+version = "0.0.1"
+source = "git+https://github.com/goffrie/lalr#00a6a4bec8095c725646baa746d948120879aae9"
+
+[[package]]
+name = "plex"
+version = "0.0.1"
+source = "git+https://github.com/goffrie/plex#e3cc96a264072269ab6b038abb2b56a20f0df40b"
+dependencies = [
+ "lalr 0.0.1 (git+https://github.com/goffrie/lalr)",
+ "regex-dfa 0.0.1 (git+https://github.com/goffrie/regex-dfa)",
+]
+
+[[package]]
+name = "regex-dfa"
+version = "0.0.1"
+source = "git+https://github.com/goffrie/regex-dfa#718d67435725d9c27cd160dea10664786e2be4e1"
+dependencies = [
+ "bit-set 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "vec_map 0.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "vec_map"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+

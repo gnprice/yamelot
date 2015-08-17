@@ -1,0 +1,8 @@
+[package]
+name = "yamelot"
+version = "0.1.0"
+authors = ["Geoffry Song <goffrie@dropbox.com>"]
+
+[dependencies.plex]
+
+git = "https://github.com/goffrie/plex"
