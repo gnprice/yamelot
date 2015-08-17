@@ -66,7 +66,7 @@ class YAMLEventHandler(object):
         assert self.cur_in == 'map'
         assert self.map_key
         if self.map_key == '<<':
-            defaults = self.anchors[value]
+            defaults = value
             for key, value in defaults.items():
                 if key not in self.cur_obj:
                     self.cur_obj[key] = value
@@ -85,6 +85,13 @@ class YAMLEventHandler(object):
             value = False
         return value
 
+    def add_anchor(self, anchor, value):
+        if anchor != ffi.NULL:
+            anchor_value = ffi.string(anchor)
+            if anchor_value in self.anchors:
+                raise YAMLError()
+            self.anchors[anchor_value] = value
+
     def process(self, parser):
         event = ffi.new('yaml_event_t *')
 
@@ -101,6 +108,7 @@ class YAMLEventHandler(object):
                     event.data.scalar.length,
                 )
                 value = self.convert_scalar(value)
+                self.add_anchor(event.data.scalar.anchor, value)
 
                 if self.cur_in == 'seq':
                     self.cur_obj.append(value)
@@ -111,10 +119,24 @@ class YAMLEventHandler(object):
 
             elif type_ == lib.YAML_ALIAS_EVENT:
                 anchor = ffi.string(event.data.alias.anchor)
-                self.set_map(anchor)
+                try:
+                    anchor_value = self.anchors[anchor]
+                except KeyError:
+                    raise YAMLError(
+                        'Anchor %s not found' % (
+                            ffi.string(event.data.alias.anchor),
+                        )
+                    )
+                if self.cur_in == 'seq':
+                    self.cur_obj.append(anchor_value)
+                elif self.cur_in == 'map' and self.map_key is None:
+                    self.map_key = anchor_value
+                else:
+                    self.set_map(anchor_value)
 
             elif type_ == lib.YAML_SEQUENCE_START_EVENT:
                 new_seq = []
+                self.add_anchor(event.data.scalar.anchor, new_seq)
                 if self.cur_in == 'map':
                     self.set_map(new_seq)
                 self.push_state()
@@ -126,9 +148,7 @@ class YAMLEventHandler(object):
 
             elif type_ == lib.YAML_MAPPING_START_EVENT:
                 new_map = OrderedDict()
-                anchor = event.data.mapping_start.anchor
-                if anchor != ffi.NULL:
-                    self.anchors[ffi.string(anchor)] = new_map
+                self.add_anchor(event.data.mapping_start.anchor, new_map)
 
                 if self.cur_in == 'map':
                     self.set_map(new_map)
