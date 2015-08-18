@@ -1,16 +1,9 @@
 import json
-import pytest
 import shlex
 import subprocess
 
-
-def pytest_addoption(parser):
-    parser.addoption(
-        '--executable',
-        dest="executable",
-        metavar="EXECUTABLE",
-        help="Path to executable for which to run tests",
-    )
+import py
+import pytest
 
 
 def call_with_input(executable, stdin_data):
@@ -27,34 +20,46 @@ def call_with_input(executable, stdin_data):
 
 
 class IntegrationTestFile(pytest.File):
+    def __init__(self, path, parent, runners):
+        super(IntegrationTestFile, self).__init__(path, parent)
+        self._runners = runners
+
     def collect(self):
         test_input = self.fspath.read()
         if '!' * 80 in test_input:
             input_ygp, _ = test_input.split('!' * 80, 1)
-            return [ExpectedFailingTestItem(
-                name=self.fspath.basename,
-                parent=self,
-                ygp=input_ygp,
-            )]
+            return [
+                ExpectedFailingTestItem(
+                    name=str(runner),
+                    parent=self,
+                    ygp=input_ygp,
+                    executable=str(runner),
+                )
+                for runner in runners
+            ]
         else:
             input_ygp, input_expected = test_input.split('=' * 80)
-            return [IntegrationTestItem(
-                name=self.fspath.basename,
-                parent=self,
-                ygp=input_ygp,
-                expected=input_expected,
-            )]
+            return [
+                IntegrationTestItem(
+                    name=str(runner),
+                    parent=self,
+                    ygp=input_ygp,
+                    expected=input_expected,
+                    executable=str(runner),
+                )
+                for runner in runners
+            ]
 
 
 class ExpectedFailingTestItem(pytest.Item):
-    def __init__(self, name, parent, ygp):
+    def __init__(self, name, parent, ygp, executable):
         super(ExpectedFailingTestItem, self).__init__(name, parent)
         self._ygp = ygp
+        self._executable = executable
 
     def runtest(self):
-        executable = pytest.config.getoption('executable')
         try:
-            call_with_input(executable, self._ygp)
+            call_with_input(self._executable, self._ygp)
         except SubprocessError:
             pass
         else:
@@ -73,17 +78,15 @@ class ExpectedFailingTestItem(pytest.Item):
 
 
 class IntegrationTestItem(pytest.Item):
-    def __init__(self, name, parent, ygp, expected):
+    def __init__(self, name, parent, ygp, expected, executable):
         super(IntegrationTestItem, self).__init__(name, parent)
         self._ygp = ygp
         self._expected = expected
+        self._executable = executable
 
     def runtest(self):
-        executable = pytest.config.getoption('executable')
-        if not executable:
-            raise RuntimeError('executable is a required option')
         try:
-            output = call_with_input(executable, self._ygp)
+            output = call_with_input(self._executable, self._ygp)
         except subprocess.CalledProcessError as e:
             raise YGPParseError(self._ygp, e)
 
@@ -124,7 +127,10 @@ class SubprocessError(Exception):
 
 class IntegrationTestError(Exception):
     def __init__(self, output_tree, expected_tree):
-        super(UnexpectedSuccessError, self).__init__(output_tree, expected_tree)
+        super(UnexpectedSuccessError, self).__init__(
+            output_tree,
+            expected_tree,
+        )
         self.output_tree = output_tree
         self.expected_tree = expected_tree
 
@@ -175,6 +181,16 @@ class IntegrationTestFailureRepr(object):
             tw.line('    ' + line)
 
 
+runners = set()
+
+
+def pytest_configure(config):
+    global runners
+    for p in config.option.file_or_dir:
+        path = py.path.local(p)
+        runners |= set(str(irp) for irp in path.visit('integration_runner'))
+
+
 def pytest_collect_file(parent, path):
     if path.ext == ".test":
-        return IntegrationTestFile(path, parent)
+        return IntegrationTestFile(path, parent, runners)
