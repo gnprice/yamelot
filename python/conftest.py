@@ -47,6 +47,7 @@ class ExpectedFailingTestItem(pytest.Item):
             return 'Test should have failed but parsed to\n{}'.format(
                 value.parsed_ygp
             )
+        return super(ExpectedFailingTestItem, self).repr_failure(excinfo)
 
 
 class IntergrationTestItem(pytest.Item):
