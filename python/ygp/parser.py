@@ -89,8 +89,16 @@ class YAMLEventHandler(object):
         if anchor != ffi.NULL:
             anchor_value = ffi.string(anchor)
             if anchor_value in self.anchors:
-                raise YAMLError()
+                raise YAMLError(
+                    'Anchor {} already in use'.format(anchor_value)
+                )
             self.anchors[anchor_value] = value
+
+    def check_tag(self, tag):
+        if tag != ffi.NULL:
+            raise YAMLError('Tags are not allowed tag={!}'.format(
+                ffi.string(tag)
+            ))
 
     def process(self, parser):
         event = ffi.new('yaml_event_t *')
@@ -109,6 +117,7 @@ class YAMLEventHandler(object):
                 )
                 value = self.convert_scalar(value)
                 self.add_anchor(event.data.scalar.anchor, value)
+                self.check_tag(event.data.scalar.tag)
 
                 if self.cur_in == 'seq':
                     self.cur_obj.append(value)
@@ -136,7 +145,8 @@ class YAMLEventHandler(object):
 
             elif type_ == lib.YAML_SEQUENCE_START_EVENT:
                 new_seq = []
-                self.add_anchor(event.data.scalar.anchor, new_seq)
+                self.add_anchor(event.data.sequence_start.anchor, new_seq)
+                self.check_tag(event.data.sequence_start.tag)
                 if self.cur_in == 'map':
                     self.set_map(new_seq)
                 self.push_state()
@@ -149,6 +159,7 @@ class YAMLEventHandler(object):
             elif type_ == lib.YAML_MAPPING_START_EVENT:
                 new_map = OrderedDict()
                 self.add_anchor(event.data.mapping_start.anchor, new_map)
+                self.check_tag(event.data.mapping_start.tag)
 
                 if self.cur_in == 'map':
                     self.set_map(new_map)

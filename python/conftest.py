@@ -7,8 +7,46 @@ import ygp
 
 class IntergrationTestFile(pytest.File):
     def collect(self):
-        input_ygp, input_json = self.fspath.read().split('=' * 80)
-        return [IntergrationTestItem(self.fspath.basename, self, input_ygp, input_json)]
+        test_input = self.fspath.read()
+        if '!' * 80 in test_input:
+            input_ygp, _ = test_input.split('!' * 80, 1)
+            return [ExpectedFailingTestItem(
+                name=self.fspath.basename,
+                parent=self,
+                ygp=input_ygp,
+            )]
+        else:
+            input_ygp, input_json = test_input.split('=' * 80)
+            return [IntergrationTestItem(
+                name=self.fspath.basename,
+                parent=self,
+                ygp=input_ygp,
+                json=input_json,
+            )]
+
+
+class ExpectedFailingTestItem(pytest.Item):
+    def __init__(self, name, parent, ygp):
+        super(ExpectedFailingTestItem, self).__init__(name, parent)
+        self._ygp = ygp
+
+    def reportinfo(self):
+        return self.fspath, self.name, '{}:{}'.format(self.fspath, self.name)
+
+    def runtest(self):
+        try:
+            parsed_ygp = ygp.loads(self._ygp)
+        except ValueError:
+            pass
+        else:
+            raise UnexpectedSuccessError(parsed_ygp)
+
+    def repr_failure(self, excinfo):
+        value = excinfo.value
+        if isinstance(value, UnexpectedSuccessError):
+            return 'Test should have failed but parsed to\n{}'.format(
+                value.parsed_ygp
+            )
 
 
 class IntergrationTestItem(pytest.Item):
@@ -34,9 +72,13 @@ class IntergrationTestItem(pytest.Item):
     def repr_failure(self, excinfo):
         value = excinfo.value
         if isinstance(value, JSONParseError):
-            return 'JSON format error: {}\n{}'.format(value.error, value.json_input)
+            return 'JSON format error: {}\n{}'.format(
+                value.error, value.json_input
+            )
         if isinstance(value, YGPParseError):
-            return 'YGP format error: {}\n{}'.format(value.error, value.ygp_input)
+            return 'YGP format error: {}\n{}'.format(
+                value.error, value.ygp_input
+            )
         elif isinstance(value, IntergrationTestError):
             return IntergrationTestFailureRepr(self.config, value)
         return super(IntergrationTestItem, self).repr_failure(excinfo)
@@ -49,6 +91,11 @@ class IntergrationTestError(Exception):
     def __init__(self, parsed_ygp, parsed_json):
         self.parsed_ygp = parsed_ygp
         self.parsed_json = parsed_json
+
+
+class UnexpectedSuccessError(Exception):
+    def __init__(self, parsed_ygp):
+        self.parsed_ygp = parsed_ygp
 
 
 class JSONParseError(Exception):
@@ -71,11 +118,22 @@ class IntergrationTestFailureRepr(object):
         self.assertrepr_compare = assertion_plugin.pytest_assertrepr_compare
 
     def __str__(self):
-        exp = self.assertrepr_compare(self.config, '==', self.value.parsed_ygp, self.value.parsed_json)
+        exp = self.assertrepr_compare(
+            self.config,
+            '==',
+            self.value.parsed_ygp,
+            self.value.parsed_json,
+        )
         return '  \n'.join(exp)
 
     def toterminal(self, tw):
-        for line in self.assertrepr_compare(self.config, '==', self.value.parsed_ygp, self.value.parsed_json):
+        lines = self.assertrepr_compare(
+            self.config,
+            '==',
+            self.value.parsed_ygp,
+            self.value.parsed_json,
+        )
+        for line in lines:
             tw.line('    ' + line)
 
 
