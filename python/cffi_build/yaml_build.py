@@ -15,7 +15,11 @@ ffi.cdef("""
 
 typedef enum yaml_error_type_e { ...  } yaml_error_type_t;
 
-typedef enum yaml_encoding_e { ...  } yaml_encoding_t;
+typedef enum yaml_encoding_e {
+    YAML_UTF8_ENCODING,
+
+    ...
+} yaml_encoding_t;
 
 typedef enum yaml_sequence_style_e { ...  } yaml_sequence_style_t;
 
@@ -134,6 +138,8 @@ typedef struct yaml_event_s {
 int yaml_parser_initialize(yaml_parser_t *parser);
 
 void yaml_parser_delete(yaml_parser_t *parser);
+
+void yaml_parser_set_encoding(yaml_parser_t *parser, yaml_encoding_t encoding);
 
 void yaml_parser_set_input_string(yaml_parser_t *parser,
         const unsigned char *input, size_t size);

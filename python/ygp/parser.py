@@ -237,6 +237,7 @@ def loads(string):
         raise YGPError('Failed to init libyaml')
 
     try:
+        lib.yaml_parser_set_encoding(parser, lib.YAML_UTF8_ENCODING)
         lib.yaml_parser_set_input_string(parser, string, len(string))
         event_handler = YAMLEventHandler(parser)
         return event_handler.process()
@@ -251,6 +252,7 @@ def load(file_obj):
         raise YGPError('Failed to init libyaml')
 
     try:
+        lib.yaml_parser_set_encoding(parser, lib.YAML_UTF8_ENCODING)
         lib.yaml_parser_set_input_file(parser, file_obj)
         event_handler = YAMLEventHandler(parser)
         return event_handler.process()
