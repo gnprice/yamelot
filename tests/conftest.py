@@ -59,11 +59,11 @@ class ExpectedFailingTestItem(pytest.Item):
 
     def runtest(self):
         try:
-            call_with_input(self._executable, self._ygp)
+            output = call_with_input(self._executable, self._ygp)
         except SubprocessError:
             pass
         else:
-            raise UnexpectedSuccessError(self._ygp)
+            raise UnexpectedSuccessError(output)
 
     def repr_failure(self, excinfo):
         value = excinfo.value
