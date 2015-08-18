@@ -1,7 +1,7 @@
 from __future__ import absolute_import
 from __future__ import print_function
 
-from collections import OrderedDict
+from collections import OrderedDict, Mapping
 
 from ygp._yaml import ffi, lib
 
@@ -81,9 +81,12 @@ class YAMLEventHandler(object):
         assert self.map_key
         if self.map_key == '<<':
             defaults = value
-            for key, value in defaults.items():
-                if key not in self.cur_obj:
-                    self.cur_obj[key] = value
+            if isinstance(defaults, Mapping):
+                defaults = [defaults]
+            for default in defaults:
+                for key, value in default.items():
+                    if key not in self.cur_obj:
+                        self.cur_obj[key] = value
         else:
             self.cur_obj[self.map_key] = value
         self.map_key = None

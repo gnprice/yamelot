@@ -5,6 +5,10 @@ body:
     height: 400
     <<: *DEFAULTS
 
+body_2:
+    <<: *DEFAULTS
+    height: 400
+
 h1:
     height: 30
     color: green
@@ -20,6 +24,10 @@ h2:
         "color": "red"
     },
     "body": {
+        "height": 400,
+        "color": "red"
+    },
+    "body_2": {
         "height": 400,
         "color": "red"
     },
