@@ -115,7 +115,7 @@ class YAMLEventHandler(object):
     def check_tag(self, tag):
         if tag != ffi.NULL:
             raise self.build_custom_error(
-                'Tags are not allowed tag={!}'.format(ffi.string(tag))
+                'Tags are not allowed tag={!r}'.format(ffi.string(tag))
             )
 
     def process(self):
@@ -146,9 +146,7 @@ class YAMLEventHandler(object):
                     value == '' and
                     event.data.scalar.style == lib.YAML_PLAIN_SCALAR_STYLE
                 ):
-                    raise self.build_custom_error(
-                        'Missing value'
-                    )
+                    raise self.build_custom_error('Missing value')
                 if (
                     value == '~' and
                     event.data.scalar.style == lib.YAML_PLAIN_SCALAR_STYLE
@@ -164,6 +162,13 @@ class YAMLEventHandler(object):
                 if self.cur_in == 'seq':
                     self.cur_obj.append(value)
                 elif self.cur_in == 'map' and self.map_key is None:
+                    if event.data.scalar.style in (
+                        lib.YAML_FOLDED_SCALAR_STYLE,
+                        lib.YAML_LITERAL_SCALAR_STYLE
+                    ):
+                        raise self.build_custom_error(
+                            'Literal scalers are not allowed as keys'
+                        )
                     self.map_key = value
                 else:
                     self.set_map(value)
