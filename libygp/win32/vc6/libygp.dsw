@@ -12,7 +12,7 @@ Package=<5>
 Package=<4>
 {{{
     Begin Project Dependency
-    Project_Dep_Name yaml
+    Project_Dep_Name ygp
     End Project Dependency
 }}}
 
@@ -27,7 +27,7 @@ Package=<5>
 Package=<4>
 {{{
     Begin Project Dependency
-    Project_Dep_Name yaml
+    Project_Dep_Name ygp
     End Project Dependency
 }}}
 
@@ -42,7 +42,7 @@ Package=<5>
 Package=<4>
 {{{
     Begin Project Dependency
-    Project_Dep_Name yaml
+    Project_Dep_Name ygp
     End Project Dependency
 }}}
 
@@ -57,7 +57,7 @@ Package=<5>
 Package=<4>
 {{{
     Begin Project Dependency
-    Project_Dep_Name yaml
+    Project_Dep_Name ygp
     End Project Dependency
 }}}
 
@@ -72,7 +72,7 @@ Package=<5>
 Package=<4>
 {{{
     Begin Project Dependency
-    Project_Dep_Name yaml
+    Project_Dep_Name ygp
     End Project Dependency
 }}}
 
@@ -87,7 +87,7 @@ Package=<5>
 Package=<4>
 {{{
     Begin Project Dependency
-    Project_Dep_Name yaml
+    Project_Dep_Name ygp
     End Project Dependency
 }}}
 
@@ -102,7 +102,7 @@ Package=<5>
 Package=<4>
 {{{
     Begin Project Dependency
-    Project_Dep_Name yaml
+    Project_Dep_Name ygp
     End Project Dependency
 }}}
 
@@ -117,7 +117,7 @@ Package=<5>
 Package=<4>
 {{{
     Begin Project Dependency
-    Project_Dep_Name yaml
+    Project_Dep_Name ygp
     End Project Dependency
 }}}
 
@@ -132,7 +132,7 @@ Package=<5>
 Package=<4>
 {{{
     Begin Project Dependency
-    Project_Dep_Name yaml
+    Project_Dep_Name ygp
     End Project Dependency
 }}}
 
@@ -147,7 +147,7 @@ Package=<5>
 Package=<4>
 {{{
     Begin Project Dependency
-    Project_Dep_Name yaml
+    Project_Dep_Name ygp
     End Project Dependency
 }}}
 
@@ -162,13 +162,13 @@ Package=<5>
 Package=<4>
 {{{
     Begin Project Dependency
-    Project_Dep_Name yaml
+    Project_Dep_Name ygp
     End Project Dependency
 }}}
 
 ###############################################################################
 
-Project: "yaml"=".\yaml.dsp" - Package Owner=<4>
+Project: "ygp"=".\ygp.dsp" - Package Owner=<4>
 
 Package=<5>
 {{{
@@ -180,7 +180,7 @@ Package=<4>
 
 ###############################################################################
 
-Project: "yamldll"=".\yamldll.dsp" - Package Owner=<4>
+Project: "ygpdll"=".\ygpdll.dsp" - Package Owner=<4>
 
 Package=<5>
 {{{

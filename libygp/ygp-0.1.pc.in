@@ -3,8 +3,8 @@ exec_prefix=@exec_prefix@
 includedir=@includedir@
 libdir=@libdir@
 
-Name: LibYAML
-Description: Library to parse and emit YAML
+Name: LibYGP
+Description: Library to parse and emit YGP
 Version: @PACKAGE_VERSION@
 Cflags:
-Libs: -L${libdir} -lyaml
+Libs: -L${libdir} -lygp

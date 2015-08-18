@@ -1,4 +1,4 @@
-INCLUDES = yaml.h
+INCLUDES = ygp.h
 DOXYGEN_CFG = $(top_srcdir)/doc/doxygen.cfg
 
 nobase_include_HEADERS = $(INCLUDES)

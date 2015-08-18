@@ -1,34 +1,34 @@
 
-#include "yaml_private.h"
+#include "ygp_private.h"
 
 /*
  * Get the library version.
  */
 
-YAML_DECLARE(const char *)
-yaml_get_version_string(void)
+YGP_DECLARE(const char *)
+ygp_get_version_string(void)
 {
-    return YAML_VERSION_STRING;
+    return YGP_VERSION_STRING;
 }
 
 /*
  * Get the library version numbers.
  */
 
-YAML_DECLARE(void)
-yaml_get_version(int *major, int *minor, int *patch)
+YGP_DECLARE(void)
+ygp_get_version(int *major, int *minor, int *patch)
 {
-    *major = YAML_VERSION_MAJOR;
-    *minor = YAML_VERSION_MINOR;
-    *patch = YAML_VERSION_PATCH;
+    *major = YGP_VERSION_MAJOR;
+    *minor = YGP_VERSION_MINOR;
+    *patch = YGP_VERSION_PATCH;
 }
 
 /*
  * Allocate a dynamic memory block.
  */
 
-YAML_DECLARE(void *)
-yaml_malloc(size_t size)
+YGP_DECLARE(void *)
+ygp_malloc(size_t size)
 {
     return malloc(size ? size : 1);
 }
@@ -37,8 +37,8 @@ yaml_malloc(size_t size)
  * Reallocate a dynamic memory block.
  */
 
-YAML_DECLARE(void *)
-yaml_realloc(void *ptr, size_t size)
+YGP_DECLARE(void *)
+ygp_realloc(void *ptr, size_t size)
 {
     return ptr ? realloc(ptr, size ? size : 1) : malloc(size ? size : 1);
 }
@@ -47,8 +47,8 @@ yaml_realloc(void *ptr, size_t size)
  * Free a dynamic memory block.
  */
 
-YAML_DECLARE(void)
-yaml_free(void *ptr)
+YGP_DECLARE(void)
+ygp_free(void *ptr)
 {
     if (ptr) free(ptr);
 }
@@ -57,24 +57,24 @@ yaml_free(void *ptr)
  * Duplicate a string.
  */
 
-YAML_DECLARE(yaml_char_t *)
-yaml_strdup(const yaml_char_t *str)
+YGP_DECLARE(ygp_char_t *)
+ygp_strdup(const ygp_char_t *str)
 {
     if (!str)
         return NULL;
 
-    return (yaml_char_t *)strdup((char *)str);
+    return (ygp_char_t *)strdup((char *)str);
 }
 
 /*
  * Extend a string.
  */
 
-YAML_DECLARE(int)
-yaml_string_extend(yaml_char_t **start,
-        yaml_char_t **pointer, yaml_char_t **end)
+YGP_DECLARE(int)
+ygp_string_extend(ygp_char_t **start,
+        ygp_char_t **pointer, ygp_char_t **end)
 {
-    yaml_char_t *new_start = yaml_realloc(*start, (*end - *start)*2);
+    ygp_char_t *new_start = ygp_realloc(*start, (*end - *start)*2);
 
     if (!new_start) return 0;
 
@@ -91,16 +91,16 @@ yaml_string_extend(yaml_char_t **start,
  * Append a string B to a string A.
  */
 
-YAML_DECLARE(int)
-yaml_string_join(
-        yaml_char_t **a_start, yaml_char_t **a_pointer, yaml_char_t **a_end,
-        yaml_char_t **b_start, yaml_char_t **b_pointer, yaml_char_t **b_end)
+YGP_DECLARE(int)
+ygp_string_join(
+        ygp_char_t **a_start, ygp_char_t **a_pointer, ygp_char_t **a_end,
+        ygp_char_t **b_start, ygp_char_t **b_pointer, ygp_char_t **b_end)
 {
     if (*b_start == *b_pointer)
         return 1;
 
     while (*a_end - *a_pointer <= *b_pointer - *b_start) {
-        if (!yaml_string_extend(a_start, a_pointer, a_end))
+        if (!ygp_string_extend(a_start, a_pointer, a_end))
             return 0;
     }
 
@@ -114,10 +114,10 @@ yaml_string_join(
  * Extend a stack.
  */
 
-YAML_DECLARE(int)
-yaml_stack_extend(void **start, void **top, void **end)
+YGP_DECLARE(int)
+ygp_stack_extend(void **start, void **top, void **end)
 {
-    void *new_start = yaml_realloc(*start, ((char *)*end - (char *)*start)*2);
+    void *new_start = ygp_realloc(*start, ((char *)*end - (char *)*start)*2);
 
     if (!new_start) return 0;
 
@@ -132,13 +132,13 @@ yaml_stack_extend(void **start, void **top, void **end)
  * Extend or move a queue.
  */
 
-YAML_DECLARE(int)
-yaml_queue_extend(void **start, void **head, void **tail, void **end)
+YGP_DECLARE(int)
+ygp_queue_extend(void **start, void **head, void **tail, void **end)
 {
     /* Check if we need to resize the queue. */
 
     if (*start == *head && *tail == *end) {
-        void *new_start = yaml_realloc(*start,
+        void *new_start = ygp_realloc(*start,
                 ((char *)*end - (char *)*start)*2);
 
         if (!new_start) return 0;
@@ -167,12 +167,12 @@ yaml_queue_extend(void **start, void **head, void **tail, void **end)
  * Create a new parser object.
  */
 
-YAML_DECLARE(int)
-yaml_parser_initialize(yaml_parser_t *parser)
+YGP_DECLARE(int)
+ygp_parser_initialize(ygp_parser_t *parser)
 {
     assert(parser);     /* Non-NULL parser object expected. */
 
-    memset(parser, 0, sizeof(yaml_parser_t));
+    memset(parser, 0, sizeof(ygp_parser_t));
     if (!BUFFER_INIT(parser, parser->raw_buffer, INPUT_RAW_BUFFER_SIZE))
         goto error;
     if (!BUFFER_INIT(parser, parser->buffer, INPUT_BUFFER_SIZE))
@@ -210,15 +210,15 @@ error:
  * Destroy a parser object.
  */
 
-YAML_DECLARE(void)
-yaml_parser_delete(yaml_parser_t *parser)
+YGP_DECLARE(void)
+ygp_parser_delete(ygp_parser_t *parser)
 {
     assert(parser); /* Non-NULL parser object expected. */
 
     BUFFER_DEL(parser, parser->raw_buffer);
     BUFFER_DEL(parser, parser->buffer);
     while (!QUEUE_EMPTY(parser, parser->tokens)) {
-        yaml_token_delete(&DEQUEUE(parser, parser->tokens));
+        ygp_token_delete(&DEQUEUE(parser, parser->tokens));
     }
     QUEUE_DEL(parser, parser->tokens);
     STACK_DEL(parser, parser->indents);
@@ -226,13 +226,13 @@ yaml_parser_delete(yaml_parser_t *parser)
     STACK_DEL(parser, parser->states);
     STACK_DEL(parser, parser->marks);
     while (!STACK_EMPTY(parser, parser->tag_directives)) {
-        yaml_tag_directive_t tag_directive = POP(parser, parser->tag_directives);
-        yaml_free(tag_directive.handle);
-        yaml_free(tag_directive.prefix);
+        ygp_tag_directive_t tag_directive = POP(parser, parser->tag_directives);
+        ygp_free(tag_directive.handle);
+        ygp_free(tag_directive.prefix);
     }
     STACK_DEL(parser, parser->tag_directives);
 
-    memset(parser, 0, sizeof(yaml_parser_t));
+    memset(parser, 0, sizeof(ygp_parser_t));
 }
 
 /*
@@ -240,10 +240,10 @@ yaml_parser_delete(yaml_parser_t *parser)
  */
 
 static int
-yaml_string_read_handler(void *data, unsigned char *buffer, size_t size,
+ygp_string_read_handler(void *data, unsigned char *buffer, size_t size,
         size_t *size_read)
 {
-    yaml_parser_t *parser = data;
+    ygp_parser_t *parser = data;
 
     if (parser->input.string.current == parser->input.string.end) {
         *size_read = 0;
@@ -266,10 +266,10 @@ yaml_string_read_handler(void *data, unsigned char *buffer, size_t size,
  */
 
 static int
-yaml_file_read_handler(void *data, unsigned char *buffer, size_t size,
+ygp_file_read_handler(void *data, unsigned char *buffer, size_t size,
         size_t *size_read)
 {
-    yaml_parser_t *parser = data;
+    ygp_parser_t *parser = data;
 
     *size_read = fread(buffer, 1, size, parser->input.file);
     return !ferror(parser->input.file);
@@ -279,15 +279,15 @@ yaml_file_read_handler(void *data, unsigned char *buffer, size_t size,
  * Set a string input.
  */
 
-YAML_DECLARE(void)
-yaml_parser_set_input_string(yaml_parser_t *parser,
+YGP_DECLARE(void)
+ygp_parser_set_input_string(ygp_parser_t *parser,
         const unsigned char *input, size_t size)
 {
     assert(parser); /* Non-NULL parser object expected. */
     assert(!parser->read_handler);  /* You can set the source only once. */
     assert(input);  /* Non-NULL input string expected. */
 
-    parser->read_handler = yaml_string_read_handler;
+    parser->read_handler = ygp_string_read_handler;
     parser->read_handler_data = parser;
 
     parser->input.string.start = input;
@@ -299,14 +299,14 @@ yaml_parser_set_input_string(yaml_parser_t *parser,
  * Set a file input.
  */
 
-YAML_DECLARE(void)
-yaml_parser_set_input_file(yaml_parser_t *parser, FILE *file)
+YGP_DECLARE(void)
+ygp_parser_set_input_file(ygp_parser_t *parser, FILE *file)
 {
     assert(parser); /* Non-NULL parser object expected. */
     assert(!parser->read_handler);  /* You can set the source only once. */
     assert(file);   /* Non-NULL file object expected. */
 
-    parser->read_handler = yaml_file_read_handler;
+    parser->read_handler = ygp_file_read_handler;
     parser->read_handler_data = parser;
 
     parser->input.file = file;
@@ -316,9 +316,9 @@ yaml_parser_set_input_file(yaml_parser_t *parser, FILE *file)
  * Set a generic input.
  */
 
-YAML_DECLARE(void)
-yaml_parser_set_input(yaml_parser_t *parser,
-        yaml_read_handler_t *handler, void *data)
+YGP_DECLARE(void)
+ygp_parser_set_input(ygp_parser_t *parser,
+        ygp_read_handler_t *handler, void *data)
 {
     assert(parser); /* Non-NULL parser object expected. */
     assert(!parser->read_handler);  /* You can set the source only once. */
@@ -332,8 +332,8 @@ yaml_parser_set_input(yaml_parser_t *parser,
  * Set the source encoding.
  */
 
-YAML_DECLARE(void)
-yaml_parser_set_encoding(yaml_parser_t *parser, yaml_encoding_t encoding)
+YGP_DECLARE(void)
+ygp_parser_set_encoding(ygp_parser_t *parser, ygp_encoding_t encoding)
 {
     assert(parser); /* Non-NULL parser object expected. */
     assert(!parser->encoding); /* Encoding is already set or detected. */
@@ -345,12 +345,12 @@ yaml_parser_set_encoding(yaml_parser_t *parser, yaml_encoding_t encoding)
  * Create a new emitter object.
  */
 
-YAML_DECLARE(int)
-yaml_emitter_initialize(yaml_emitter_t *emitter)
+YGP_DECLARE(int)
+ygp_emitter_initialize(ygp_emitter_t *emitter)
 {
     assert(emitter);    /* Non-NULL emitter object expected. */
 
-    memset(emitter, 0, sizeof(yaml_emitter_t));
+    memset(emitter, 0, sizeof(ygp_emitter_t));
     if (!BUFFER_INIT(emitter, emitter->buffer, OUTPUT_BUFFER_SIZE))
         goto error;
     if (!BUFFER_INIT(emitter, emitter->raw_buffer, OUTPUT_RAW_BUFFER_SIZE))
@@ -382,8 +382,8 @@ error:
  * Destroy an emitter object.
  */
 
-YAML_DECLARE(void)
-yaml_emitter_delete(yaml_emitter_t *emitter)
+YGP_DECLARE(void)
+ygp_emitter_delete(ygp_emitter_t *emitter)
 {
     assert(emitter);    /* Non-NULL emitter object expected. */
 
@@ -391,19 +391,19 @@ yaml_emitter_delete(yaml_emitter_t *emitter)
     BUFFER_DEL(emitter, emitter->raw_buffer);
     STACK_DEL(emitter, emitter->states);
     while (!QUEUE_EMPTY(emitter, emitter->events)) {
-        yaml_event_delete(&DEQUEUE(emitter, emitter->events));
+        ygp_event_delete(&DEQUEUE(emitter, emitter->events));
     }
     QUEUE_DEL(emitter, emitter->events);
     STACK_DEL(emitter, emitter->indents);
     while (!STACK_EMPTY(empty, emitter->tag_directives)) {
-        yaml_tag_directive_t tag_directive = POP(emitter, emitter->tag_directives);
-        yaml_free(tag_directive.handle);
-        yaml_free(tag_directive.prefix);
+        ygp_tag_directive_t tag_directive = POP(emitter, emitter->tag_directives);
+        ygp_free(tag_directive.handle);
+        ygp_free(tag_directive.prefix);
     }
     STACK_DEL(emitter, emitter->tag_directives);
-    yaml_free(emitter->anchors);
+    ygp_free(emitter->anchors);
 
-    memset(emitter, 0, sizeof(yaml_emitter_t));
+    memset(emitter, 0, sizeof(ygp_emitter_t));
 }
 
 /*
@@ -411,9 +411,9 @@ yaml_emitter_delete(yaml_emitter_t *emitter)
  */
 
 static int
-yaml_string_write_handler(void *data, unsigned char *buffer, size_t size)
+ygp_string_write_handler(void *data, unsigned char *buffer, size_t size)
 {
-    yaml_emitter_t *emitter = data;
+    ygp_emitter_t *emitter = data;
 
     if (emitter->output.string.size + *emitter->output.string.size_written
             < size) {
@@ -437,9 +437,9 @@ yaml_string_write_handler(void *data, unsigned char *buffer, size_t size)
  */
 
 static int
-yaml_file_write_handler(void *data, unsigned char *buffer, size_t size)
+ygp_file_write_handler(void *data, unsigned char *buffer, size_t size)
 {
-    yaml_emitter_t *emitter = data;
+    ygp_emitter_t *emitter = data;
 
     return (fwrite(buffer, 1, size, emitter->output.file) == size);
 }
@@ -447,15 +447,15 @@ yaml_file_write_handler(void *data, unsigned char *buffer, size_t size)
  * Set a string output.
  */
 
-YAML_DECLARE(void)
-yaml_emitter_set_output_string(yaml_emitter_t *emitter,
+YGP_DECLARE(void)
+ygp_emitter_set_output_string(ygp_emitter_t *emitter,
         unsigned char *output, size_t size, size_t *size_written)
 {
     assert(emitter);    /* Non-NULL emitter object expected. */
     assert(!emitter->write_handler);    /* You can set the output only once. */
     assert(output);     /* Non-NULL output string expected. */
 
-    emitter->write_handler = yaml_string_write_handler;
+    emitter->write_handler = ygp_string_write_handler;
     emitter->write_handler_data = emitter;
 
     emitter->output.string.buffer = output;
@@ -468,14 +468,14 @@ yaml_emitter_set_output_string(yaml_emitter_t *emitter,
  * Set a file output.
  */
 
-YAML_DECLARE(void)
-yaml_emitter_set_output_file(yaml_emitter_t *emitter, FILE *file)
+YGP_DECLARE(void)
+ygp_emitter_set_output_file(ygp_emitter_t *emitter, FILE *file)
 {
     assert(emitter);    /* Non-NULL emitter object expected. */
     assert(!emitter->write_handler);    /* You can set the output only once. */
     assert(file);       /* Non-NULL file object expected. */
 
-    emitter->write_handler = yaml_file_write_handler;
+    emitter->write_handler = ygp_file_write_handler;
     emitter->write_handler_data = emitter;
 
     emitter->output.file = file;
@@ -485,9 +485,9 @@ yaml_emitter_set_output_file(yaml_emitter_t *emitter, FILE *file)
  * Set a generic output handler.
  */
 
-YAML_DECLARE(void)
-yaml_emitter_set_output(yaml_emitter_t *emitter,
-        yaml_write_handler_t *handler, void *data)
+YGP_DECLARE(void)
+ygp_emitter_set_output(ygp_emitter_t *emitter,
+        ygp_write_handler_t *handler, void *data)
 {
     assert(emitter);    /* Non-NULL emitter object expected. */
     assert(!emitter->write_handler);    /* You can set the output only once. */
@@ -501,8 +501,8 @@ yaml_emitter_set_output(yaml_emitter_t *emitter,
  * Set the output encoding.
  */
 
-YAML_DECLARE(void)
-yaml_emitter_set_encoding(yaml_emitter_t *emitter, yaml_encoding_t encoding)
+YGP_DECLARE(void)
+ygp_emitter_set_encoding(ygp_emitter_t *emitter, ygp_encoding_t encoding)
 {
     assert(emitter);    /* Non-NULL emitter object expected. */
     assert(!emitter->encoding);     /* You can set encoding only once. */
@@ -514,8 +514,8 @@ yaml_emitter_set_encoding(yaml_emitter_t *emitter, yaml_encoding_t encoding)
  * Set the canonical output style.
  */
 
-YAML_DECLARE(void)
-yaml_emitter_set_canonical(yaml_emitter_t *emitter, int canonical)
+YGP_DECLARE(void)
+ygp_emitter_set_canonical(ygp_emitter_t *emitter, int canonical)
 {
     assert(emitter);    /* Non-NULL emitter object expected. */
 
@@ -526,8 +526,8 @@ yaml_emitter_set_canonical(yaml_emitter_t *emitter, int canonical)
  * Set the indentation increment.
  */
 
-YAML_DECLARE(void)
-yaml_emitter_set_indent(yaml_emitter_t *emitter, int indent)
+YGP_DECLARE(void)
+ygp_emitter_set_indent(ygp_emitter_t *emitter, int indent)
 {
     assert(emitter);    /* Non-NULL emitter object expected. */
 
@@ -538,8 +538,8 @@ yaml_emitter_set_indent(yaml_emitter_t *emitter, int indent)
  * Set the preferred line width.
  */
 
-YAML_DECLARE(void)
-yaml_emitter_set_width(yaml_emitter_t *emitter, int width)
+YGP_DECLARE(void)
+ygp_emitter_set_width(ygp_emitter_t *emitter, int width)
 {
     assert(emitter);    /* Non-NULL emitter object expected. */
 
@@ -550,8 +550,8 @@ yaml_emitter_set_width(yaml_emitter_t *emitter, int width)
  * Set if unescaped non-ASCII characters are allowed.
  */
 
-YAML_DECLARE(void)
-yaml_emitter_set_unicode(yaml_emitter_t *emitter, int unicode)
+YGP_DECLARE(void)
+ygp_emitter_set_unicode(ygp_emitter_t *emitter, int unicode)
 {
     assert(emitter);    /* Non-NULL emitter object expected. */
 
@@ -562,8 +562,8 @@ yaml_emitter_set_unicode(yaml_emitter_t *emitter, int unicode)
  * Set the preferred line break character.
  */
 
-YAML_DECLARE(void)
-yaml_emitter_set_break(yaml_emitter_t *emitter, yaml_break_t line_break)
+YGP_DECLARE(void)
+ygp_emitter_set_break(ygp_emitter_t *emitter, ygp_break_t line_break)
 {
     assert(emitter);    /* Non-NULL emitter object expected. */
 
@@ -574,40 +574,40 @@ yaml_emitter_set_break(yaml_emitter_t *emitter, yaml_break_t line_break)
  * Destroy a token object.
  */
 
-YAML_DECLARE(void)
-yaml_token_delete(yaml_token_t *token)
+YGP_DECLARE(void)
+ygp_token_delete(ygp_token_t *token)
 {
     assert(token);  /* Non-NULL token object expected. */
 
     switch (token->type)
     {
-        case YAML_TAG_DIRECTIVE_TOKEN:
-            yaml_free(token->data.tag_directive.handle);
-            yaml_free(token->data.tag_directive.prefix);
+        case YGP_TAG_DIRECTIVE_TOKEN:
+            ygp_free(token->data.tag_directive.handle);
+            ygp_free(token->data.tag_directive.prefix);
             break;
 
-        case YAML_ALIAS_TOKEN:
-            yaml_free(token->data.alias.value);
+        case YGP_ALIAS_TOKEN:
+            ygp_free(token->data.alias.value);
             break;
 
-        case YAML_ANCHOR_TOKEN:
-            yaml_free(token->data.anchor.value);
+        case YGP_ANCHOR_TOKEN:
+            ygp_free(token->data.anchor.value);
             break;
 
-        case YAML_TAG_TOKEN:
-            yaml_free(token->data.tag.handle);
-            yaml_free(token->data.tag.suffix);
+        case YGP_TAG_TOKEN:
+            ygp_free(token->data.tag.handle);
+            ygp_free(token->data.tag.suffix);
             break;
 
-        case YAML_SCALAR_TOKEN:
-            yaml_free(token->data.scalar.value);
+        case YGP_SCALAR_TOKEN:
+            ygp_free(token->data.scalar.value);
             break;
 
         default:
             break;
     }
 
-    memset(token, 0, sizeof(yaml_token_t));
+    memset(token, 0, sizeof(ygp_token_t));
 }
 
 /*
@@ -617,10 +617,10 @@ yaml_token_delete(yaml_token_t *token)
  */
 
 static int
-yaml_check_utf8(yaml_char_t *start, size_t length)
+ygp_check_utf8(ygp_char_t *start, size_t length)
 {
-    yaml_char_t *end = start+length;
-    yaml_char_t *pointer = start;
+    ygp_char_t *end = start+length;
+    ygp_char_t *pointer = start;
 
     while (pointer < end) {
         unsigned char octet;
@@ -659,11 +659,11 @@ yaml_check_utf8(yaml_char_t *start, size_t length)
  * Create STREAM-START.
  */
 
-YAML_DECLARE(int)
-yaml_stream_start_event_initialize(yaml_event_t *event,
-        yaml_encoding_t encoding)
+YGP_DECLARE(int)
+ygp_stream_start_event_initialize(ygp_event_t *event,
+        ygp_encoding_t encoding)
 {
-    yaml_mark_t mark = { 0, 0, 0 };
+    ygp_mark_t mark = { 0, 0, 0 };
 
     assert(event);  /* Non-NULL event object is expected. */
 
@@ -676,10 +676,10 @@ yaml_stream_start_event_initialize(yaml_event_t *event,
  * Create STREAM-END.
  */
 
-YAML_DECLARE(int)
-yaml_stream_end_event_initialize(yaml_event_t *event)
+YGP_DECLARE(int)
+ygp_stream_end_event_initialize(ygp_event_t *event)
 {
-    yaml_mark_t mark = { 0, 0, 0 };
+    ygp_mark_t mark = { 0, 0, 0 };
 
     assert(event);  /* Non-NULL event object is expected. */
 
@@ -692,24 +692,24 @@ yaml_stream_end_event_initialize(yaml_event_t *event)
  * Create DOCUMENT-START.
  */
 
-YAML_DECLARE(int)
-yaml_document_start_event_initialize(yaml_event_t *event,
-        yaml_version_directive_t *version_directive,
-        yaml_tag_directive_t *tag_directives_start,
-        yaml_tag_directive_t *tag_directives_end,
+YGP_DECLARE(int)
+ygp_document_start_event_initialize(ygp_event_t *event,
+        ygp_version_directive_t *version_directive,
+        ygp_tag_directive_t *tag_directives_start,
+        ygp_tag_directive_t *tag_directives_end,
         int implicit)
 {
     struct {
-        yaml_error_type_t error;
+        ygp_error_type_t error;
     } context;
-    yaml_mark_t mark = { 0, 0, 0 };
-    yaml_version_directive_t *version_directive_copy = NULL;
+    ygp_mark_t mark = { 0, 0, 0 };
+    ygp_version_directive_t *version_directive_copy = NULL;
     struct {
-        yaml_tag_directive_t *start;
-        yaml_tag_directive_t *end;
-        yaml_tag_directive_t *top;
+        ygp_tag_directive_t *start;
+        ygp_tag_directive_t *end;
+        ygp_tag_directive_t *top;
     } tag_directives_copy = { NULL, NULL, NULL };
-    yaml_tag_directive_t value = { NULL, NULL };
+    ygp_tag_directive_t value = { NULL, NULL };
 
     assert(event);          /* Non-NULL event object is expected. */
     assert((tag_directives_start && tag_directives_end) ||
@@ -717,28 +717,28 @@ yaml_document_start_event_initialize(yaml_event_t *event,
                             /* Valid tag directives are expected. */
 
     if (version_directive) {
-        version_directive_copy = yaml_malloc(sizeof(yaml_version_directive_t));
+        version_directive_copy = ygp_malloc(sizeof(ygp_version_directive_t));
         if (!version_directive_copy) goto error;
         version_directive_copy->major = version_directive->major;
         version_directive_copy->minor = version_directive->minor;
     }
 
     if (tag_directives_start != tag_directives_end) {
-        yaml_tag_directive_t *tag_directive;
+        ygp_tag_directive_t *tag_directive;
         if (!STACK_INIT(&context, tag_directives_copy, INITIAL_STACK_SIZE))
             goto error;
         for (tag_directive = tag_directives_start;
                 tag_directive != tag_directives_end; tag_directive ++) {
             assert(tag_directive->handle);
             assert(tag_directive->prefix);
-            if (!yaml_check_utf8(tag_directive->handle,
+            if (!ygp_check_utf8(tag_directive->handle,
                         strlen((char *)tag_directive->handle)))
                 goto error;
-            if (!yaml_check_utf8(tag_directive->prefix,
+            if (!ygp_check_utf8(tag_directive->prefix,
                         strlen((char *)tag_directive->prefix)))
                 goto error;
-            value.handle = yaml_strdup(tag_directive->handle);
-            value.prefix = yaml_strdup(tag_directive->prefix);
+            value.handle = ygp_strdup(tag_directive->handle);
+            value.prefix = ygp_strdup(tag_directive->prefix);
             if (!value.handle || !value.prefix) goto error;
             if (!PUSH(&context, tag_directives_copy, value))
                 goto error;
@@ -754,15 +754,15 @@ yaml_document_start_event_initialize(yaml_event_t *event,
     return 1;
 
 error:
-    yaml_free(version_directive_copy);
+    ygp_free(version_directive_copy);
     while (!STACK_EMPTY(context, tag_directives_copy)) {
-        yaml_tag_directive_t value = POP(context, tag_directives_copy);
-        yaml_free(value.handle);
-        yaml_free(value.prefix);
+        ygp_tag_directive_t value = POP(context, tag_directives_copy);
+        ygp_free(value.handle);
+        ygp_free(value.prefix);
     }
     STACK_DEL(context, tag_directives_copy);
-    yaml_free(value.handle);
-    yaml_free(value.prefix);
+    ygp_free(value.handle);
+    ygp_free(value.prefix);
 
     return 0;
 }
@@ -771,10 +771,10 @@ error:
  * Create DOCUMENT-END.
  */
 
-YAML_DECLARE(int)
-yaml_document_end_event_initialize(yaml_event_t *event, int implicit)
+YGP_DECLARE(int)
+ygp_document_end_event_initialize(ygp_event_t *event, int implicit)
 {
-    yaml_mark_t mark = { 0, 0, 0 };
+    ygp_mark_t mark = { 0, 0, 0 };
 
     assert(event);      /* Non-NULL emitter object is expected. */
 
@@ -787,18 +787,18 @@ yaml_document_end_event_initialize(yaml_event_t *event, int implicit)
  * Create ALIAS.
  */
 
-YAML_DECLARE(int)
-yaml_alias_event_initialize(yaml_event_t *event, yaml_char_t *anchor)
+YGP_DECLARE(int)
+ygp_alias_event_initialize(ygp_event_t *event, ygp_char_t *anchor)
 {
-    yaml_mark_t mark = { 0, 0, 0 };
-    yaml_char_t *anchor_copy = NULL;
+    ygp_mark_t mark = { 0, 0, 0 };
+    ygp_char_t *anchor_copy = NULL;
 
     assert(event);      /* Non-NULL event object is expected. */
     assert(anchor);     /* Non-NULL anchor is expected. */
 
-    if (!yaml_check_utf8(anchor, strlen((char *)anchor))) return 0;
+    if (!ygp_check_utf8(anchor, strlen((char *)anchor))) return 0;
 
-    anchor_copy = yaml_strdup(anchor);
+    anchor_copy = ygp_strdup(anchor);
     if (!anchor_copy)
         return 0;
 
@@ -811,30 +811,30 @@ yaml_alias_event_initialize(yaml_event_t *event, yaml_char_t *anchor)
  * Create SCALAR.
  */
 
-YAML_DECLARE(int)
-yaml_scalar_event_initialize(yaml_event_t *event,
-        yaml_char_t *anchor, yaml_char_t *tag,
-        yaml_char_t *value, int length,
+YGP_DECLARE(int)
+ygp_scalar_event_initialize(ygp_event_t *event,
+        ygp_char_t *anchor, ygp_char_t *tag,
+        ygp_char_t *value, int length,
         int plain_implicit, int quoted_implicit,
-        yaml_scalar_style_t style)
+        ygp_scalar_style_t style)
 {
-    yaml_mark_t mark = { 0, 0, 0 };
-    yaml_char_t *anchor_copy = NULL;
-    yaml_char_t *tag_copy = NULL;
-    yaml_char_t *value_copy = NULL;
+    ygp_mark_t mark = { 0, 0, 0 };
+    ygp_char_t *anchor_copy = NULL;
+    ygp_char_t *tag_copy = NULL;
+    ygp_char_t *value_copy = NULL;
 
     assert(event);      /* Non-NULL event object is expected. */
     assert(value);      /* Non-NULL anchor is expected. */
 
     if (anchor) {
-        if (!yaml_check_utf8(anchor, strlen((char *)anchor))) goto error;
-        anchor_copy = yaml_strdup(anchor);
+        if (!ygp_check_utf8(anchor, strlen((char *)anchor))) goto error;
+        anchor_copy = ygp_strdup(anchor);
         if (!anchor_copy) goto error;
     }
 
     if (tag) {
-        if (!yaml_check_utf8(tag, strlen((char *)tag))) goto error;
-        tag_copy = yaml_strdup(tag);
+        if (!ygp_check_utf8(tag, strlen((char *)tag))) goto error;
+        tag_copy = ygp_strdup(tag);
         if (!tag_copy) goto error;
     }
 
@@ -842,8 +842,8 @@ yaml_scalar_event_initialize(yaml_event_t *event,
         length = strlen((char *)value);
     }
 
-    if (!yaml_check_utf8(value, length)) goto error;
-    value_copy = yaml_malloc(length+1);
+    if (!ygp_check_utf8(value, length)) goto error;
+    value_copy = ygp_malloc(length+1);
     if (!value_copy) goto error;
     memcpy(value_copy, value, length);
     value_copy[length] = '\0';
@@ -854,9 +854,9 @@ yaml_scalar_event_initialize(yaml_event_t *event,
     return 1;
 
 error:
-    yaml_free(anchor_copy);
-    yaml_free(tag_copy);
-    yaml_free(value_copy);
+    ygp_free(anchor_copy);
+    ygp_free(tag_copy);
+    ygp_free(value_copy);
 
     return 0;
 }
@@ -865,26 +865,26 @@ error:
  * Create SEQUENCE-START.
  */
 
-YAML_DECLARE(int)
-yaml_sequence_start_event_initialize(yaml_event_t *event,
-        yaml_char_t *anchor, yaml_char_t *tag, int implicit,
-        yaml_sequence_style_t style)
+YGP_DECLARE(int)
+ygp_sequence_start_event_initialize(ygp_event_t *event,
+        ygp_char_t *anchor, ygp_char_t *tag, int implicit,
+        ygp_sequence_style_t style)
 {
-    yaml_mark_t mark = { 0, 0, 0 };
-    yaml_char_t *anchor_copy = NULL;
-    yaml_char_t *tag_copy = NULL;
+    ygp_mark_t mark = { 0, 0, 0 };
+    ygp_char_t *anchor_copy = NULL;
+    ygp_char_t *tag_copy = NULL;
 
     assert(event);      /* Non-NULL event object is expected. */
 
     if (anchor) {
-        if (!yaml_check_utf8(anchor, strlen((char *)anchor))) goto error;
-        anchor_copy = yaml_strdup(anchor);
+        if (!ygp_check_utf8(anchor, strlen((char *)anchor))) goto error;
+        anchor_copy = ygp_strdup(anchor);
         if (!anchor_copy) goto error;
     }
 
     if (tag) {
-        if (!yaml_check_utf8(tag, strlen((char *)tag))) goto error;
-        tag_copy = yaml_strdup(tag);
+        if (!ygp_check_utf8(tag, strlen((char *)tag))) goto error;
+        tag_copy = ygp_strdup(tag);
         if (!tag_copy) goto error;
     }
 
@@ -894,8 +894,8 @@ yaml_sequence_start_event_initialize(yaml_event_t *event,
     return 1;
 
 error:
-    yaml_free(anchor_copy);
-    yaml_free(tag_copy);
+    ygp_free(anchor_copy);
+    ygp_free(tag_copy);
 
     return 0;
 }
@@ -904,10 +904,10 @@ error:
  * Create SEQUENCE-END.
  */
 
-YAML_DECLARE(int)
-yaml_sequence_end_event_initialize(yaml_event_t *event)
+YGP_DECLARE(int)
+ygp_sequence_end_event_initialize(ygp_event_t *event)
 {
-    yaml_mark_t mark = { 0, 0, 0 };
+    ygp_mark_t mark = { 0, 0, 0 };
 
     assert(event);      /* Non-NULL event object is expected. */
 
@@ -920,26 +920,26 @@ yaml_sequence_end_event_initialize(yaml_event_t *event)
  * Create MAPPING-START.
  */
 
-YAML_DECLARE(int)
-yaml_mapping_start_event_initialize(yaml_event_t *event,
-        yaml_char_t *anchor, yaml_char_t *tag, int implicit,
-        yaml_mapping_style_t style)
+YGP_DECLARE(int)
+ygp_mapping_start_event_initialize(ygp_event_t *event,
+        ygp_char_t *anchor, ygp_char_t *tag, int implicit,
+        ygp_mapping_style_t style)
 {
-    yaml_mark_t mark = { 0, 0, 0 };
-    yaml_char_t *anchor_copy = NULL;
-    yaml_char_t *tag_copy = NULL;
+    ygp_mark_t mark = { 0, 0, 0 };
+    ygp_char_t *anchor_copy = NULL;
+    ygp_char_t *tag_copy = NULL;
 
     assert(event);      /* Non-NULL event object is expected. */
 
     if (anchor) {
-        if (!yaml_check_utf8(anchor, strlen((char *)anchor))) goto error;
-        anchor_copy = yaml_strdup(anchor);
+        if (!ygp_check_utf8(anchor, strlen((char *)anchor))) goto error;
+        anchor_copy = ygp_strdup(anchor);
         if (!anchor_copy) goto error;
     }
 
     if (tag) {
-        if (!yaml_check_utf8(tag, strlen((char *)tag))) goto error;
-        tag_copy = yaml_strdup(tag);
+        if (!ygp_check_utf8(tag, strlen((char *)tag))) goto error;
+        tag_copy = ygp_strdup(tag);
         if (!tag_copy) goto error;
     }
 
@@ -949,8 +949,8 @@ yaml_mapping_start_event_initialize(yaml_event_t *event,
     return 1;
 
 error:
-    yaml_free(anchor_copy);
-    yaml_free(tag_copy);
+    ygp_free(anchor_copy);
+    ygp_free(tag_copy);
 
     return 0;
 }
@@ -959,10 +959,10 @@ error:
  * Create MAPPING-END.
  */
 
-YAML_DECLARE(int)
-yaml_mapping_end_event_initialize(yaml_event_t *event)
+YGP_DECLARE(int)
+ygp_mapping_end_event_initialize(ygp_event_t *event)
 {
-    yaml_mark_t mark = { 0, 0, 0 };
+    ygp_mark_t mark = { 0, 0, 0 };
 
     assert(event);      /* Non-NULL event object is expected. */
 
@@ -975,80 +975,80 @@ yaml_mapping_end_event_initialize(yaml_event_t *event)
  * Destroy an event object.
  */
 
-YAML_DECLARE(void)
-yaml_event_delete(yaml_event_t *event)
+YGP_DECLARE(void)
+ygp_event_delete(ygp_event_t *event)
 {
-    yaml_tag_directive_t *tag_directive;
+    ygp_tag_directive_t *tag_directive;
 
     assert(event);  /* Non-NULL event object expected. */
 
     switch (event->type)
     {
-        case YAML_DOCUMENT_START_EVENT:
-            yaml_free(event->data.document_start.version_directive);
+        case YGP_DOCUMENT_START_EVENT:
+            ygp_free(event->data.document_start.version_directive);
             for (tag_directive = event->data.document_start.tag_directives.start;
                     tag_directive != event->data.document_start.tag_directives.end;
                     tag_directive++) {
-                yaml_free(tag_directive->handle);
-                yaml_free(tag_directive->prefix);
+                ygp_free(tag_directive->handle);
+                ygp_free(tag_directive->prefix);
             }
-            yaml_free(event->data.document_start.tag_directives.start);
+            ygp_free(event->data.document_start.tag_directives.start);
             break;
 
-        case YAML_ALIAS_EVENT:
-            yaml_free(event->data.alias.anchor);
+        case YGP_ALIAS_EVENT:
+            ygp_free(event->data.alias.anchor);
             break;
 
-        case YAML_SCALAR_EVENT:
-            yaml_free(event->data.scalar.anchor);
-            yaml_free(event->data.scalar.tag);
-            yaml_free(event->data.scalar.value);
+        case YGP_SCALAR_EVENT:
+            ygp_free(event->data.scalar.anchor);
+            ygp_free(event->data.scalar.tag);
+            ygp_free(event->data.scalar.value);
             break;
 
-        case YAML_SEQUENCE_START_EVENT:
-            yaml_free(event->data.sequence_start.anchor);
-            yaml_free(event->data.sequence_start.tag);
+        case YGP_SEQUENCE_START_EVENT:
+            ygp_free(event->data.sequence_start.anchor);
+            ygp_free(event->data.sequence_start.tag);
             break;
 
-        case YAML_MAPPING_START_EVENT:
-            yaml_free(event->data.mapping_start.anchor);
-            yaml_free(event->data.mapping_start.tag);
+        case YGP_MAPPING_START_EVENT:
+            ygp_free(event->data.mapping_start.anchor);
+            ygp_free(event->data.mapping_start.tag);
             break;
 
         default:
             break;
     }
 
-    memset(event, 0, sizeof(yaml_event_t));
+    memset(event, 0, sizeof(ygp_event_t));
 }
 
 /*
  * Create a document object.
  */
 
-YAML_DECLARE(int)
-yaml_document_initialize(yaml_document_t *document,
-        yaml_version_directive_t *version_directive,
-        yaml_tag_directive_t *tag_directives_start,
-        yaml_tag_directive_t *tag_directives_end,
+YGP_DECLARE(int)
+ygp_document_initialize(ygp_document_t *document,
+        ygp_version_directive_t *version_directive,
+        ygp_tag_directive_t *tag_directives_start,
+        ygp_tag_directive_t *tag_directives_end,
         int start_implicit, int end_implicit)
 {
     struct {
-        yaml_error_type_t error;
+        ygp_error_type_t error;
     } context;
     struct {
-        yaml_node_t *start;
-        yaml_node_t *end;
-        yaml_node_t *top;
+        ygp_node_t *start;
+        ygp_node_t *end;
+        ygp_node_t *top;
     } nodes = { NULL, NULL, NULL };
-    yaml_version_directive_t *version_directive_copy = NULL;
+    ygp_version_directive_t *version_directive_copy = NULL;
     struct {
-        yaml_tag_directive_t *start;
-        yaml_tag_directive_t *end;
-        yaml_tag_directive_t *top;
+        ygp_tag_directive_t *start;
+        ygp_tag_directive_t *end;
+        ygp_tag_directive_t *top;
     } tag_directives_copy = { NULL, NULL, NULL };
-    yaml_tag_directive_t value = { NULL, NULL };
-    yaml_mark_t mark = { 0, 0, 0 };
+    ygp_tag_directive_t value = { NULL, NULL };
+    ygp_mark_t mark = { 0, 0, 0 };
 
     assert(document);       /* Non-NULL document object is expected. */
     assert((tag_directives_start && tag_directives_end) ||
@@ -1058,28 +1058,28 @@ yaml_document_initialize(yaml_document_t *document,
     if (!STACK_INIT(&context, nodes, INITIAL_STACK_SIZE)) goto error;
 
     if (version_directive) {
-        version_directive_copy = yaml_malloc(sizeof(yaml_version_directive_t));
+        version_directive_copy = ygp_malloc(sizeof(ygp_version_directive_t));
         if (!version_directive_copy) goto error;
         version_directive_copy->major = version_directive->major;
         version_directive_copy->minor = version_directive->minor;
     }
 
     if (tag_directives_start != tag_directives_end) {
-        yaml_tag_directive_t *tag_directive;
+        ygp_tag_directive_t *tag_directive;
         if (!STACK_INIT(&context, tag_directives_copy, INITIAL_STACK_SIZE))
             goto error;
         for (tag_directive = tag_directives_start;
                 tag_directive != tag_directives_end; tag_directive ++) {
             assert(tag_directive->handle);
             assert(tag_directive->prefix);
-            if (!yaml_check_utf8(tag_directive->handle,
+            if (!ygp_check_utf8(tag_directive->handle,
                         strlen((char *)tag_directive->handle)))
                 goto error;
-            if (!yaml_check_utf8(tag_directive->prefix,
+            if (!ygp_check_utf8(tag_directive->prefix,
                         strlen((char *)tag_directive->prefix)))
                 goto error;
-            value.handle = yaml_strdup(tag_directive->handle);
-            value.prefix = yaml_strdup(tag_directive->prefix);
+            value.handle = ygp_strdup(tag_directive->handle);
+            value.prefix = ygp_strdup(tag_directive->prefix);
             if (!value.handle || !value.prefix) goto error;
             if (!PUSH(&context, tag_directives_copy, value))
                 goto error;
@@ -1096,15 +1096,15 @@ yaml_document_initialize(yaml_document_t *document,
 
 error:
     STACK_DEL(&context, nodes);
-    yaml_free(version_directive_copy);
+    ygp_free(version_directive_copy);
     while (!STACK_EMPTY(&context, tag_directives_copy)) {
-        yaml_tag_directive_t value = POP(&context, tag_directives_copy);
-        yaml_free(value.handle);
-        yaml_free(value.prefix);
+        ygp_tag_directive_t value = POP(&context, tag_directives_copy);
+        ygp_free(value.handle);
+        ygp_free(value.prefix);
     }
     STACK_DEL(&context, tag_directives_copy);
-    yaml_free(value.handle);
-    yaml_free(value.prefix);
+    ygp_free(value.handle);
+    ygp_free(value.prefix);
 
     return 0;
 }
@@ -1113,29 +1113,29 @@ error:
  * Destroy a document object.
  */
 
-YAML_DECLARE(void)
-yaml_document_delete(yaml_document_t *document)
+YGP_DECLARE(void)
+ygp_document_delete(ygp_document_t *document)
 {
     struct {
-        yaml_error_type_t error;
+        ygp_error_type_t error;
     } context;
-    yaml_tag_directive_t *tag_directive;
+    ygp_tag_directive_t *tag_directive;
 
-    context.error = YAML_NO_ERROR;  /* Eliminate a compliler warning. */
+    context.error = YGP_NO_ERROR;  /* Eliminate a compliler warning. */
 
     assert(document);   /* Non-NULL document object is expected. */
 
     while (!STACK_EMPTY(&context, document->nodes)) {
-        yaml_node_t node = POP(&context, document->nodes);
-        yaml_free(node.tag);
+        ygp_node_t node = POP(&context, document->nodes);
+        ygp_free(node.tag);
         switch (node.type) {
-            case YAML_SCALAR_NODE:
-                yaml_free(node.data.scalar.value);
+            case YGP_SCALAR_NODE:
+                ygp_free(node.data.scalar.value);
                 break;
-            case YAML_SEQUENCE_NODE:
+            case YGP_SEQUENCE_NODE:
                 STACK_DEL(&context, node.data.sequence.items);
                 break;
-            case YAML_MAPPING_NODE:
+            case YGP_MAPPING_NODE:
                 STACK_DEL(&context, node.data.mapping.pairs);
                 break;
             default:
@@ -1144,24 +1144,24 @@ yaml_document_delete(yaml_document_t *document)
     }
     STACK_DEL(&context, document->nodes);
 
-    yaml_free(document->version_directive);
+    ygp_free(document->version_directive);
     for (tag_directive = document->tag_directives.start;
             tag_directive != document->tag_directives.end;
             tag_directive++) {
-        yaml_free(tag_directive->handle);
-        yaml_free(tag_directive->prefix);
+        ygp_free(tag_directive->handle);
+        ygp_free(tag_directive->prefix);
     }
-    yaml_free(document->tag_directives.start);
+    ygp_free(document->tag_directives.start);
 
-    memset(document, 0, sizeof(yaml_document_t));
+    memset(document, 0, sizeof(ygp_document_t));
 }
 
 /**
  * Get a document node.
  */
 
-YAML_DECLARE(yaml_node_t *)
-yaml_document_get_node(yaml_document_t *document, int index)
+YGP_DECLARE(ygp_node_t *)
+ygp_document_get_node(ygp_document_t *document, int index)
 {
     assert(document);   /* Non-NULL document object is expected. */
 
@@ -1175,8 +1175,8 @@ yaml_document_get_node(yaml_document_t *document, int index)
  * Get the root object.
  */
 
-YAML_DECLARE(yaml_node_t *)
-yaml_document_get_root_node(yaml_document_t *document)
+YGP_DECLARE(ygp_node_t *)
+ygp_document_get_root_node(ygp_document_t *document)
 {
     assert(document);   /* Non-NULL document object is expected. */
 
@@ -1190,36 +1190,36 @@ yaml_document_get_root_node(yaml_document_t *document)
  * Add a scalar node to a document.
  */
 
-YAML_DECLARE(int)
-yaml_document_add_scalar(yaml_document_t *document,
-        yaml_char_t *tag, yaml_char_t *value, int length,
-        yaml_scalar_style_t style)
+YGP_DECLARE(int)
+ygp_document_add_scalar(ygp_document_t *document,
+        ygp_char_t *tag, ygp_char_t *value, int length,
+        ygp_scalar_style_t style)
 {
     struct {
-        yaml_error_type_t error;
+        ygp_error_type_t error;
     } context;
-    yaml_mark_t mark = { 0, 0, 0 };
-    yaml_char_t *tag_copy = NULL;
-    yaml_char_t *value_copy = NULL;
-    yaml_node_t node;
+    ygp_mark_t mark = { 0, 0, 0 };
+    ygp_char_t *tag_copy = NULL;
+    ygp_char_t *value_copy = NULL;
+    ygp_node_t node;
 
     assert(document);   /* Non-NULL document object is expected. */
     assert(value);      /* Non-NULL value is expected. */
 
     if (!tag) {
-        tag = (yaml_char_t *)YAML_DEFAULT_SCALAR_TAG;
+        tag = (ygp_char_t *)YGP_DEFAULT_SCALAR_TAG;
     }
 
-    if (!yaml_check_utf8(tag, strlen((char *)tag))) goto error;
-    tag_copy = yaml_strdup(tag);
+    if (!ygp_check_utf8(tag, strlen((char *)tag))) goto error;
+    tag_copy = ygp_strdup(tag);
     if (!tag_copy) goto error;
 
     if (length < 0) {
         length = strlen((char *)value);
     }
 
-    if (!yaml_check_utf8(value, length)) goto error;
-    value_copy = yaml_malloc(length+1);
+    if (!ygp_check_utf8(value, length)) goto error;
+    value_copy = ygp_malloc(length+1);
     if (!value_copy) goto error;
     memcpy(value_copy, value, length);
     value_copy[length] = '\0';
@@ -1230,8 +1230,8 @@ yaml_document_add_scalar(yaml_document_t *document,
     return document->nodes.top - document->nodes.start;
 
 error:
-    yaml_free(tag_copy);
-    yaml_free(value_copy);
+    ygp_free(tag_copy);
+    ygp_free(value_copy);
 
     return 0;
 }
@@ -1240,30 +1240,30 @@ error:
  * Add a sequence node to a document.
  */
 
-YAML_DECLARE(int)
-yaml_document_add_sequence(yaml_document_t *document,
-        yaml_char_t *tag, yaml_sequence_style_t style)
+YGP_DECLARE(int)
+ygp_document_add_sequence(ygp_document_t *document,
+        ygp_char_t *tag, ygp_sequence_style_t style)
 {
     struct {
-        yaml_error_type_t error;
+        ygp_error_type_t error;
     } context;
-    yaml_mark_t mark = { 0, 0, 0 };
-    yaml_char_t *tag_copy = NULL;
+    ygp_mark_t mark = { 0, 0, 0 };
+    ygp_char_t *tag_copy = NULL;
     struct {
-        yaml_node_item_t *start;
-        yaml_node_item_t *end;
-        yaml_node_item_t *top;
+        ygp_node_item_t *start;
+        ygp_node_item_t *end;
+        ygp_node_item_t *top;
     } items = { NULL, NULL, NULL };
-    yaml_node_t node;
+    ygp_node_t node;
 
     assert(document);   /* Non-NULL document object is expected. */
 
     if (!tag) {
-        tag = (yaml_char_t *)YAML_DEFAULT_SEQUENCE_TAG;
+        tag = (ygp_char_t *)YGP_DEFAULT_SEQUENCE_TAG;
     }
 
-    if (!yaml_check_utf8(tag, strlen((char *)tag))) goto error;
-    tag_copy = yaml_strdup(tag);
+    if (!ygp_check_utf8(tag, strlen((char *)tag))) goto error;
+    tag_copy = ygp_strdup(tag);
     if (!tag_copy) goto error;
 
     if (!STACK_INIT(&context, items, INITIAL_STACK_SIZE)) goto error;
@@ -1276,7 +1276,7 @@ yaml_document_add_sequence(yaml_document_t *document,
 
 error:
     STACK_DEL(&context, items);
-    yaml_free(tag_copy);
+    ygp_free(tag_copy);
 
     return 0;
 }
@@ -1285,30 +1285,30 @@ error:
  * Add a mapping node to a document.
  */
 
-YAML_DECLARE(int)
-yaml_document_add_mapping(yaml_document_t *document,
-        yaml_char_t *tag, yaml_mapping_style_t style)
+YGP_DECLARE(int)
+ygp_document_add_mapping(ygp_document_t *document,
+        ygp_char_t *tag, ygp_mapping_style_t style)
 {
     struct {
-        yaml_error_type_t error;
+        ygp_error_type_t error;
     } context;
-    yaml_mark_t mark = { 0, 0, 0 };
-    yaml_char_t *tag_copy = NULL;
+    ygp_mark_t mark = { 0, 0, 0 };
+    ygp_char_t *tag_copy = NULL;
     struct {
-        yaml_node_pair_t *start;
-        yaml_node_pair_t *end;
-        yaml_node_pair_t *top;
+        ygp_node_pair_t *start;
+        ygp_node_pair_t *end;
+        ygp_node_pair_t *top;
     } pairs = { NULL, NULL, NULL };
-    yaml_node_t node;
+    ygp_node_t node;
 
     assert(document);   /* Non-NULL document object is expected. */
 
     if (!tag) {
-        tag = (yaml_char_t *)YAML_DEFAULT_MAPPING_TAG;
+        tag = (ygp_char_t *)YGP_DEFAULT_MAPPING_TAG;
     }
 
-    if (!yaml_check_utf8(tag, strlen((char *)tag))) goto error;
-    tag_copy = yaml_strdup(tag);
+    if (!ygp_check_utf8(tag, strlen((char *)tag))) goto error;
+    tag_copy = ygp_strdup(tag);
     if (!tag_copy) goto error;
 
     if (!STACK_INIT(&context, pairs, INITIAL_STACK_SIZE)) goto error;
@@ -1321,7 +1321,7 @@ yaml_document_add_mapping(yaml_document_t *document,
 
 error:
     STACK_DEL(&context, pairs);
-    yaml_free(tag_copy);
+    ygp_free(tag_copy);
 
     return 0;
 }
@@ -1330,19 +1330,19 @@ error:
  * Append an item to a sequence node.
  */
 
-YAML_DECLARE(int)
-yaml_document_append_sequence_item(yaml_document_t *document,
+YGP_DECLARE(int)
+ygp_document_append_sequence_item(ygp_document_t *document,
         int sequence, int item)
 {
     struct {
-        yaml_error_type_t error;
+        ygp_error_type_t error;
     } context;
 
     assert(document);       /* Non-NULL document is required. */
     assert(sequence > 0
             && document->nodes.start + sequence <= document->nodes.top);
                             /* Valid sequence id is required. */
-    assert(document->nodes.start[sequence-1].type == YAML_SEQUENCE_NODE);
+    assert(document->nodes.start[sequence-1].type == YGP_SEQUENCE_NODE);
                             /* A sequence node is required. */
     assert(item > 0 && document->nodes.start + item <= document->nodes.top);
                             /* Valid item id is required. */
@@ -1358,21 +1358,21 @@ yaml_document_append_sequence_item(yaml_document_t *document,
  * Append a pair of a key and a value to a mapping node.
  */
 
-YAML_DECLARE(int)
-yaml_document_append_mapping_pair(yaml_document_t *document,
+YGP_DECLARE(int)
+ygp_document_append_mapping_pair(ygp_document_t *document,
         int mapping, int key, int value)
 {
     struct {
-        yaml_error_type_t error;
+        ygp_error_type_t error;
     } context;
 
-    yaml_node_pair_t pair;
+    ygp_node_pair_t pair;
 
     assert(document);       /* Non-NULL document is required. */
     assert(mapping > 0
             && document->nodes.start + mapping <= document->nodes.top);
                             /* Valid mapping id is required. */
-    assert(document->nodes.start[mapping-1].type == YAML_MAPPING_NODE);
+    assert(document->nodes.start[mapping-1].type == YGP_MAPPING_NODE);
                             /* A mapping node is required. */
     assert(key > 0 && document->nodes.start + key <= document->nodes.top);
                             /* Valid key id is required. */

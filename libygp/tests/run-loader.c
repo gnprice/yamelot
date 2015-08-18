@@ -1,4 +1,4 @@
-#include <yaml.h>
+#include <ygp.h>
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -21,8 +21,8 @@ main(int argc, char *argv[])
     for (number = 1; number < argc; number ++)
     {
         FILE *file;
-        yaml_parser_t parser;
-        yaml_document_t document;
+        ygp_parser_t parser;
+        ygp_document_t document;
         int done = 0;
         int count = 0;
         int error = 0;
@@ -33,25 +33,25 @@ main(int argc, char *argv[])
         file = fopen(argv[number], "rb");
         assert(file);
 
-        assert(yaml_parser_initialize(&parser));
+        assert(ygp_parser_initialize(&parser));
 
-        yaml_parser_set_input_file(&parser, file);
+        ygp_parser_set_input_file(&parser, file);
 
         while (!done)
         {
-            if (!yaml_parser_load(&parser, &document)) {
+            if (!ygp_parser_load(&parser, &document)) {
                 error = 1;
                 break;
             }
 
-            done = (!yaml_document_get_root_node(&document));
+            done = (!ygp_document_get_root_node(&document));
 
-            yaml_document_delete(&document);
+            ygp_document_delete(&document);
 
             if (!done) count ++;
         }
 
-        yaml_parser_delete(&parser);
+        ygp_parser_delete(&parser);
 
         assert(!fclose(file));
 

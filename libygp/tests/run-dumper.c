@@ -1,4 +1,4 @@
-#include <yaml.h>
+#include <ygp.h>
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -12,13 +12,13 @@
 #define BUFFER_SIZE 65536
 #define MAX_DOCUMENTS  16
 
-int copy_document(yaml_document_t *document_to, yaml_document_t *document_from)
+int copy_document(ygp_document_t *document_to, ygp_document_t *document_from)
 {
-    yaml_node_t *node;
-    yaml_node_item_t *item;
-    yaml_node_pair_t *pair;
+    ygp_node_t *node;
+    ygp_node_item_t *item;
+    ygp_node_pair_t *pair;
 
-    if (!yaml_document_initialize(document_to, document_from->version_directive,
+    if (!ygp_document_initialize(document_to, document_from->version_directive,
                 document_from->tag_directives.start,
                 document_from->tag_directives.end,
                 document_from->start_implicit, document_from->end_implicit))
@@ -27,17 +27,17 @@ int copy_document(yaml_document_t *document_to, yaml_document_t *document_from)
     for (node = document_from->nodes.start;
             node < document_from->nodes.top; node ++) {
         switch (node->type) {
-            case YAML_SCALAR_NODE:
-                if (!yaml_document_add_scalar(document_to, node->tag,
+            case YGP_SCALAR_NODE:
+                if (!ygp_document_add_scalar(document_to, node->tag,
                             node->data.scalar.value, node->data.scalar.length,
                             node->data.scalar.style)) goto error;
                 break;
-            case YAML_SEQUENCE_NODE:
-                if (!yaml_document_add_sequence(document_to, node->tag,
+            case YGP_SEQUENCE_NODE:
+                if (!ygp_document_add_sequence(document_to, node->tag,
                             node->data.sequence.style)) goto error;
                 break;
-            case YAML_MAPPING_NODE:
-                if (!yaml_document_add_mapping(document_to, node->tag,
+            case YGP_MAPPING_NODE:
+                if (!ygp_document_add_mapping(document_to, node->tag,
                             node->data.mapping.style)) goto error;
                 break;
             default:
@@ -49,18 +49,18 @@ int copy_document(yaml_document_t *document_to, yaml_document_t *document_from)
     for (node = document_from->nodes.start;
             node < document_from->nodes.top; node ++) {
         switch (node->type) {
-            case YAML_SEQUENCE_NODE:
+            case YGP_SEQUENCE_NODE:
                 for (item = node->data.sequence.items.start;
                         item < node->data.sequence.items.top; item ++) {
-                    if (!yaml_document_append_sequence_item(document_to,
+                    if (!ygp_document_append_sequence_item(document_to,
                                 node - document_from->nodes.start + 1,
                                 *item)) goto error;
                 }
                 break;
-            case YAML_MAPPING_NODE:
+            case YGP_MAPPING_NODE:
                 for (pair = node->data.mapping.pairs.start;
                         pair < node->data.mapping.pairs.top; pair ++) {
-                    if (!yaml_document_append_mapping_pair(document_to,
+                    if (!ygp_document_append_mapping_pair(document_to,
                                 node - document_from->nodes.start + 1,
                                 pair->key, pair->value)) goto error;
                 }
@@ -72,15 +72,15 @@ int copy_document(yaml_document_t *document_to, yaml_document_t *document_from)
     return 1;
 
 error:
-    yaml_document_delete(document_to);
+    ygp_document_delete(document_to);
     return 0;
 }
 
-int compare_nodes(yaml_document_t *document1, int index1,
-        yaml_document_t *document2, int index2)
+int compare_nodes(ygp_document_t *document1, int index1,
+        ygp_document_t *document2, int index2)
 {
-    yaml_node_t *node1 = yaml_document_get_node(document1, index1);
-    yaml_node_t *node2 = yaml_document_get_node(document2, index2);
+    ygp_node_t *node1 = ygp_document_get_node(document1, index1);
+    ygp_node_t *node2 = ygp_document_get_node(document2, index2);
     int k;
 
     assert(node1);
@@ -92,13 +92,13 @@ int compare_nodes(yaml_document_t *document1, int index1,
     if (strcmp((char *)node1->tag, (char *)node2->tag) != 0) return 0;
 
     switch (node1->type) {
-        case YAML_SCALAR_NODE:
+        case YGP_SCALAR_NODE:
             if (node1->data.scalar.length != node2->data.scalar.length)
                 return 0;
             if (strncmp((char *)node1->data.scalar.value, (char *)node2->data.scalar.value,
                         node1->data.scalar.length) != 0) return 0;
             break;
-        case YAML_SEQUENCE_NODE:
+        case YGP_SEQUENCE_NODE:
             if ((node1->data.sequence.items.top - node1->data.sequence.items.start) !=
                     (node2->data.sequence.items.top - node2->data.sequence.items.start))
                 return 0;
@@ -107,7 +107,7 @@ int compare_nodes(yaml_document_t *document1, int index1,
                             document2, node2->data.sequence.items.start[k])) return 0;
             }
             break;
-        case YAML_MAPPING_NODE:
+        case YGP_MAPPING_NODE:
             if ((node1->data.mapping.pairs.top - node1->data.mapping.pairs.start) !=
                     (node2->data.mapping.pairs.top - node2->data.mapping.pairs.start))
                 return 0;
@@ -125,7 +125,7 @@ int compare_nodes(yaml_document_t *document1, int index1,
     return 1;
 }
 
-int compare_documents(yaml_document_t *document1, yaml_document_t *document2)
+int compare_documents(ygp_document_t *document1, ygp_document_t *document2)
 {
     int k;
 
@@ -222,20 +222,20 @@ main(int argc, char *argv[])
     for (number = 1; number < argc; number ++)
     {
         FILE *file;
-        yaml_parser_t parser;
-        yaml_emitter_t emitter;
+        ygp_parser_t parser;
+        ygp_emitter_t emitter;
 
-        yaml_document_t document;
+        ygp_document_t document;
         unsigned char buffer[BUFFER_SIZE];
         size_t written = 0;
-        yaml_document_t documents[MAX_DOCUMENTS];
+        ygp_document_t documents[MAX_DOCUMENTS];
         size_t document_number = 0;
         int done = 0;
         int count = 0;
         int error = 0;
         int k;
         memset(buffer, 0, BUFFER_SIZE);
-        memset(documents, 0, MAX_DOCUMENTS*sizeof(yaml_document_t));
+        memset(documents, 0, MAX_DOCUMENTS*sizeof(ygp_document_t));
 
         printf("[%d] Loading, dumping, and loading again '%s': ", number, argv[number]);
         fflush(stdout);
@@ -243,64 +243,64 @@ main(int argc, char *argv[])
         file = fopen(argv[number], "rb");
         assert(file);
 
-        assert(yaml_parser_initialize(&parser));
-        yaml_parser_set_input_file(&parser, file);
-        assert(yaml_emitter_initialize(&emitter));
+        assert(ygp_parser_initialize(&parser));
+        ygp_parser_set_input_file(&parser, file);
+        assert(ygp_emitter_initialize(&emitter));
         if (canonical) {
-            yaml_emitter_set_canonical(&emitter, 1);
+            ygp_emitter_set_canonical(&emitter, 1);
         }
         if (unicode) {
-            yaml_emitter_set_unicode(&emitter, 1);
+            ygp_emitter_set_unicode(&emitter, 1);
         }
-        yaml_emitter_set_output_string(&emitter, buffer, BUFFER_SIZE, &written);
-        yaml_emitter_open(&emitter);
+        ygp_emitter_set_output_string(&emitter, buffer, BUFFER_SIZE, &written);
+        ygp_emitter_open(&emitter);
 
         while (!done)
         {
-            if (!yaml_parser_load(&parser, &document)) {
+            if (!ygp_parser_load(&parser, &document)) {
                 error = 1;
                 break;
             }
 
-            done = (!yaml_document_get_root_node(&document));
+            done = (!ygp_document_get_root_node(&document));
             if (!done) {
                 assert(document_number < MAX_DOCUMENTS);
                 assert(copy_document(&(documents[document_number++]), &document));
-                assert(yaml_emitter_dump(&emitter, &document) || 
-                        (yaml_emitter_flush(&emitter) && print_output(argv[number], buffer, written, count)));
+                assert(ygp_emitter_dump(&emitter, &document) || 
+                        (ygp_emitter_flush(&emitter) && print_output(argv[number], buffer, written, count)));
                 count ++;
             }
             else {
-                yaml_document_delete(&document);
+                ygp_document_delete(&document);
             }
         }
 
-        yaml_parser_delete(&parser);
+        ygp_parser_delete(&parser);
         assert(!fclose(file));
-        yaml_emitter_close(&emitter);
-        yaml_emitter_delete(&emitter);
+        ygp_emitter_close(&emitter);
+        ygp_emitter_delete(&emitter);
 
         if (!error)
         {
             count = done = 0;
-            assert(yaml_parser_initialize(&parser));
-            yaml_parser_set_input_string(&parser, buffer, written);
+            assert(ygp_parser_initialize(&parser));
+            ygp_parser_set_input_string(&parser, buffer, written);
 
             while (!done)
             {
-                assert(yaml_parser_load(&parser, &document) || print_output(argv[number], buffer, written, count));
-                done = (!yaml_document_get_root_node(&document));
+                assert(ygp_parser_load(&parser, &document) || print_output(argv[number], buffer, written, count));
+                done = (!ygp_document_get_root_node(&document));
                 if (!done) {
                     assert(compare_documents(documents+count, &document) || print_output(argv[number], buffer, written, count));
                     count ++;
                 }
-                yaml_document_delete(&document);
+                ygp_document_delete(&document);
             }
-            yaml_parser_delete(&parser);
+            ygp_parser_delete(&parser);
         }
 
         for (k = 0; k < document_number; k ++) {
-            yaml_document_delete(documents+k);
+            ygp_document_delete(documents+k);
         }
 
         printf("PASSED (length: %d)\n", written);

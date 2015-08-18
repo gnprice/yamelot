@@ -1,4 +1,4 @@
-#include <yaml.h>
+#include <ygp.h>
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -12,34 +12,34 @@
 #define BUFFER_SIZE 65536
 #define MAX_EVENTS  1024
 
-int copy_event(yaml_event_t *event_to, yaml_event_t *event_from)
+int copy_event(ygp_event_t *event_to, ygp_event_t *event_from)
 {
     switch (event_from->type)
     {
-        case YAML_STREAM_START_EVENT:
-            return yaml_stream_start_event_initialize(event_to,
+        case YGP_STREAM_START_EVENT:
+            return ygp_stream_start_event_initialize(event_to,
                     event_from->data.stream_start.encoding);
 
-        case YAML_STREAM_END_EVENT:
-            return yaml_stream_end_event_initialize(event_to);
+        case YGP_STREAM_END_EVENT:
+            return ygp_stream_end_event_initialize(event_to);
 
-        case YAML_DOCUMENT_START_EVENT:
-            return yaml_document_start_event_initialize(event_to,
+        case YGP_DOCUMENT_START_EVENT:
+            return ygp_document_start_event_initialize(event_to,
                     event_from->data.document_start.version_directive,
                     event_from->data.document_start.tag_directives.start,
                     event_from->data.document_start.tag_directives.end,
                     event_from->data.document_start.implicit);
 
-        case YAML_DOCUMENT_END_EVENT:
-            return yaml_document_end_event_initialize(event_to,
+        case YGP_DOCUMENT_END_EVENT:
+            return ygp_document_end_event_initialize(event_to,
                     event_from->data.document_end.implicit);
 
-        case YAML_ALIAS_EVENT:
-            return yaml_alias_event_initialize(event_to,
+        case YGP_ALIAS_EVENT:
+            return ygp_alias_event_initialize(event_to,
                     event_from->data.alias.anchor);
 
-        case YAML_SCALAR_EVENT:
-            return yaml_scalar_event_initialize(event_to,
+        case YGP_SCALAR_EVENT:
+            return ygp_scalar_event_initialize(event_to,
                     event_from->data.scalar.anchor,
                     event_from->data.scalar.tag,
                     event_from->data.scalar.value,
@@ -48,25 +48,25 @@ int copy_event(yaml_event_t *event_to, yaml_event_t *event_from)
                     event_from->data.scalar.quoted_implicit,
                     event_from->data.scalar.style);
 
-        case YAML_SEQUENCE_START_EVENT:
-            return yaml_sequence_start_event_initialize(event_to,
+        case YGP_SEQUENCE_START_EVENT:
+            return ygp_sequence_start_event_initialize(event_to,
                     event_from->data.sequence_start.anchor,
                     event_from->data.sequence_start.tag,
                     event_from->data.sequence_start.implicit,
                     event_from->data.sequence_start.style);
 
-        case YAML_SEQUENCE_END_EVENT:
-            return yaml_sequence_end_event_initialize(event_to);
+        case YGP_SEQUENCE_END_EVENT:
+            return ygp_sequence_end_event_initialize(event_to);
 
-        case YAML_MAPPING_START_EVENT:
-            return yaml_mapping_start_event_initialize(event_to,
+        case YGP_MAPPING_START_EVENT:
+            return ygp_mapping_start_event_initialize(event_to,
                     event_from->data.mapping_start.anchor,
                     event_from->data.mapping_start.tag,
                     event_from->data.mapping_start.implicit,
                     event_from->data.mapping_start.style);
 
-        case YAML_MAPPING_END_EVENT:
-            return yaml_mapping_end_event_initialize(event_to);
+        case YGP_MAPPING_END_EVENT:
+            return ygp_mapping_end_event_initialize(event_to);
 
         default:
             assert(1);
@@ -75,7 +75,7 @@ int copy_event(yaml_event_t *event_to, yaml_event_t *event_from)
     return 0;
 }
 
-int compare_events(yaml_event_t *event1, yaml_event_t *event2)
+int compare_events(ygp_event_t *event1, ygp_event_t *event2)
 {
     int k;
 
@@ -84,12 +84,12 @@ int compare_events(yaml_event_t *event1, yaml_event_t *event2)
 
     switch (event1->type)
     {
-        case YAML_STREAM_START_EVENT:
+        case YGP_STREAM_START_EVENT:
             return 1;
             /* return (event1->data.stream_start.encoding ==
                     event2->data.stream_start.encoding); */
 
-        case YAML_DOCUMENT_START_EVENT:
+        case YGP_DOCUMENT_START_EVENT:
             if ((event1->data.document_start.version_directive && !event2->data.document_start.version_directive)
                     || (!event1->data.document_start.version_directive && event2->data.document_start.version_directive)
                     || (event1->data.document_start.version_directive && event2->data.document_start.version_directive
@@ -110,16 +110,16 @@ int compare_events(yaml_event_t *event1, yaml_event_t *event2)
                 return 0; */
             return 1;
 
-        case YAML_DOCUMENT_END_EVENT:
+        case YGP_DOCUMENT_END_EVENT:
             return 1;
             /* return (event1->data.document_end.implicit ==
                     event2->data.document_end.implicit); */
 
-        case YAML_ALIAS_EVENT:
+        case YGP_ALIAS_EVENT:
             return (strcmp((char *)event1->data.alias.anchor,
                         (char *)event2->data.alias.anchor) == 0);
 
-        case YAML_SCALAR_EVENT:
+        case YGP_SCALAR_EVENT:
             if ((event1->data.scalar.anchor && !event2->data.scalar.anchor)
                     || (!event1->data.scalar.anchor && event2->data.scalar.anchor)
                     || (event1->data.scalar.anchor && event2->data.scalar.anchor
@@ -144,7 +144,7 @@ int compare_events(yaml_event_t *event1, yaml_event_t *event2)
                 return 0;
             return 1;
 
-        case YAML_SEQUENCE_START_EVENT:
+        case YGP_SEQUENCE_START_EVENT:
             if ((event1->data.sequence_start.anchor && !event2->data.sequence_start.anchor)
                     || (!event1->data.sequence_start.anchor && event2->data.sequence_start.anchor)
                     || (event1->data.sequence_start.anchor && event2->data.sequence_start.anchor
@@ -162,7 +162,7 @@ int compare_events(yaml_event_t *event1, yaml_event_t *event2)
                 return 0;
             return 1;
 
-        case YAML_MAPPING_START_EVENT:
+        case YGP_MAPPING_START_EVENT:
             if ((event1->data.mapping_start.anchor && !event2->data.mapping_start.anchor)
                     || (!event1->data.mapping_start.anchor && event2->data.mapping_start.anchor)
                     || (event1->data.mapping_start.anchor && event2->data.mapping_start.anchor
@@ -248,19 +248,19 @@ main(int argc, char *argv[])
     for (number = 1; number < argc; number ++)
     {
         FILE *file;
-        yaml_parser_t parser;
-        yaml_emitter_t emitter;
-        yaml_event_t event;
+        ygp_parser_t parser;
+        ygp_emitter_t emitter;
+        ygp_event_t event;
         unsigned char buffer[BUFFER_SIZE];
         size_t written = 0;
-        yaml_event_t events[MAX_EVENTS];
+        ygp_event_t events[MAX_EVENTS];
         size_t event_number = 0;
         int done = 0;
         int count = 0;
         int error = 0;
         int k;
         memset(buffer, 0, BUFFER_SIZE);
-        memset(events, 0, MAX_EVENTS*sizeof(yaml_event_t));
+        memset(events, 0, MAX_EVENTS*sizeof(ygp_event_t));
 
         printf("[%d] Parsing, emitting, and parsing again '%s': ", number, argv[number]);
         fflush(stdout);
@@ -268,55 +268,55 @@ main(int argc, char *argv[])
         file = fopen(argv[number], "rb");
         assert(file);
 
-        assert(yaml_parser_initialize(&parser));
-        yaml_parser_set_input_file(&parser, file);
-        assert(yaml_emitter_initialize(&emitter));
+        assert(ygp_parser_initialize(&parser));
+        ygp_parser_set_input_file(&parser, file);
+        assert(ygp_emitter_initialize(&emitter));
         if (canonical) {
-            yaml_emitter_set_canonical(&emitter, 1);
+            ygp_emitter_set_canonical(&emitter, 1);
         }
         if (unicode) {
-            yaml_emitter_set_unicode(&emitter, 1);
+            ygp_emitter_set_unicode(&emitter, 1);
         }
-        yaml_emitter_set_output_string(&emitter, buffer, BUFFER_SIZE, &written);
+        ygp_emitter_set_output_string(&emitter, buffer, BUFFER_SIZE, &written);
 
         while (!done)
         {
-            if (!yaml_parser_parse(&parser, &event)) {
+            if (!ygp_parser_parse(&parser, &event)) {
                 error = 1;
                 break;
             }
 
-            done = (event.type == YAML_STREAM_END_EVENT);
+            done = (event.type == YGP_STREAM_END_EVENT);
             assert(event_number < MAX_EVENTS);
             assert(copy_event(&(events[event_number++]), &event));
-            assert(yaml_emitter_emit(&emitter, &event) || 
-                    (yaml_emitter_flush(&emitter) && print_output(argv[number], buffer, written, count)));
+            assert(ygp_emitter_emit(&emitter, &event) || 
+                    (ygp_emitter_flush(&emitter) && print_output(argv[number], buffer, written, count)));
             count ++;
         }
 
-        yaml_parser_delete(&parser);
+        ygp_parser_delete(&parser);
         assert(!fclose(file));
-        yaml_emitter_delete(&emitter);
+        ygp_emitter_delete(&emitter);
 
         if (!error)
         {
             count = done = 0;
-            assert(yaml_parser_initialize(&parser));
-            yaml_parser_set_input_string(&parser, buffer, written);
+            assert(ygp_parser_initialize(&parser));
+            ygp_parser_set_input_string(&parser, buffer, written);
 
             while (!done)
             {
-                assert(yaml_parser_parse(&parser, &event) || print_output(argv[number], buffer, written, count));
-                done = (event.type == YAML_STREAM_END_EVENT);
+                assert(ygp_parser_parse(&parser, &event) || print_output(argv[number], buffer, written, count));
+                done = (event.type == YGP_STREAM_END_EVENT);
                 assert(compare_events(events+count, &event) || print_output(argv[number], buffer, written, count));
-                yaml_event_delete(&event);
+                ygp_event_delete(&event);
                 count ++;
             }
-            yaml_parser_delete(&parser);
+            ygp_parser_delete(&parser);
         }
 
         for (k = 0; k < event_number; k ++) {
-            yaml_event_delete(events+k);
+            ygp_event_delete(events+k);
         }
 
         printf("PASSED (length: %d)\n", written);

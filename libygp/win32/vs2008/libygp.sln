@@ -1,8 +1,8 @@
 Microsoft Visual Studio Solution File, Format Version 10.00
 # Visual Studio 2008
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "yaml", "yaml.vcproj", "{5CE8051A-3F0C-4C39-B1C0-3338E48BA60F}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ygp", "ygp.vcproj", "{5CE8051A-3F0C-4C39-B1C0-3338E48BA60F}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "yamldll", "yamldll.vcproj", "{019A6F4C-E704-4879-8E53-622BD4BC9C89}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ygpdll", "ygpdll.vcproj", "{019A6F4C-E704-4879-8E53-622BD4BC9C89}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "example_deconstructor_alt", "example_deconstructor_alt.vcproj", "{AEBABE36-E103-4E4B-84D4-B4546285C35A}"
 	ProjectSection(ProjectDependencies) = postProject

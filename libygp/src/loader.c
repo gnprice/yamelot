@@ -1,25 +1,25 @@
 
-#include "yaml_private.h"
+#include "ygp_private.h"
 
 /*
  * API functions.
  */
 
-YAML_DECLARE(int)
-yaml_parser_load(yaml_parser_t *parser, yaml_document_t *document);
+YGP_DECLARE(int)
+ygp_parser_load(ygp_parser_t *parser, ygp_document_t *document);
 
 /*
  * Error handling.
  */
 
 static int
-yaml_parser_set_composer_error(yaml_parser_t *parser,
-        const char *problem, yaml_mark_t problem_mark);
+ygp_parser_set_composer_error(ygp_parser_t *parser,
+        const char *problem, ygp_mark_t problem_mark);
 
 static int
-yaml_parser_set_composer_error_context(yaml_parser_t *parser,
-        const char *context, yaml_mark_t context_mark,
-        const char *problem, yaml_mark_t problem_mark);
+ygp_parser_set_composer_error_context(ygp_parser_t *parser,
+        const char *context, ygp_mark_t context_mark,
+        const char *problem, ygp_mark_t problem_mark);
 
 
 /*
@@ -27,57 +27,57 @@ yaml_parser_set_composer_error_context(yaml_parser_t *parser,
  */
 
 static int
-yaml_parser_register_anchor(yaml_parser_t *parser,
-        int index, yaml_char_t *anchor);
+ygp_parser_register_anchor(ygp_parser_t *parser,
+        int index, ygp_char_t *anchor);
 
 /*
  * Clean up functions.
  */
 
 static void
-yaml_parser_delete_aliases(yaml_parser_t *parser);
+ygp_parser_delete_aliases(ygp_parser_t *parser);
 
 /*
  * Composer functions.
  */
 
 static int
-yaml_parser_load_document(yaml_parser_t *parser, yaml_event_t *first_event);
+ygp_parser_load_document(ygp_parser_t *parser, ygp_event_t *first_event);
 
 static int
-yaml_parser_load_node(yaml_parser_t *parser, yaml_event_t *first_event);
+ygp_parser_load_node(ygp_parser_t *parser, ygp_event_t *first_event);
 
 static int
-yaml_parser_load_alias(yaml_parser_t *parser, yaml_event_t *first_event);
+ygp_parser_load_alias(ygp_parser_t *parser, ygp_event_t *first_event);
 
 static int
-yaml_parser_load_scalar(yaml_parser_t *parser, yaml_event_t *first_event);
+ygp_parser_load_scalar(ygp_parser_t *parser, ygp_event_t *first_event);
 
 static int
-yaml_parser_load_sequence(yaml_parser_t *parser, yaml_event_t *first_event);
+ygp_parser_load_sequence(ygp_parser_t *parser, ygp_event_t *first_event);
 
 static int
-yaml_parser_load_mapping(yaml_parser_t *parser, yaml_event_t *first_event);
+ygp_parser_load_mapping(ygp_parser_t *parser, ygp_event_t *first_event);
 
 /*
  * Load the next document of the stream.
  */
 
-YAML_DECLARE(int)
-yaml_parser_load(yaml_parser_t *parser, yaml_document_t *document)
+YGP_DECLARE(int)
+ygp_parser_load(ygp_parser_t *parser, ygp_document_t *document)
 {
-    yaml_event_t event;
+    ygp_event_t event;
 
     assert(parser);     /* Non-NULL parser object is expected. */
     assert(document);   /* Non-NULL document object is expected. */
 
-    memset(document, 0, sizeof(yaml_document_t));
+    memset(document, 0, sizeof(ygp_document_t));
     if (!STACK_INIT(parser, document->nodes, INITIAL_STACK_SIZE))
         goto error;
 
     if (!parser->stream_start_produced) {
-        if (!yaml_parser_parse(parser, &event)) goto error;
-        assert(event.type == YAML_STREAM_START_EVENT);
+        if (!ygp_parser_parse(parser, &event)) goto error;
+        assert(event.type == YGP_STREAM_START_EVENT);
                         /* STREAM-START is expected. */
     }
 
@@ -85,8 +85,8 @@ yaml_parser_load(yaml_parser_t *parser, yaml_document_t *document)
         return 1;
     }
 
-    if (!yaml_parser_parse(parser, &event)) goto error;
-    if (event.type == YAML_STREAM_END_EVENT) {
+    if (!ygp_parser_parse(parser, &event)) goto error;
+    if (event.type == YGP_STREAM_END_EVENT) {
         return 1;
     }
 
@@ -95,17 +95,17 @@ yaml_parser_load(yaml_parser_t *parser, yaml_document_t *document)
 
     parser->document = document;
 
-    if (!yaml_parser_load_document(parser, &event)) goto error;
+    if (!ygp_parser_load_document(parser, &event)) goto error;
 
-    yaml_parser_delete_aliases(parser);
+    ygp_parser_delete_aliases(parser);
     parser->document = NULL;
 
     return 1;
 
 error:
 
-    yaml_parser_delete_aliases(parser);
-    yaml_document_delete(document);
+    ygp_parser_delete_aliases(parser);
+    ygp_document_delete(document);
     parser->document = NULL;
 
     return 0;
@@ -116,10 +116,10 @@ error:
  */
 
 static int
-yaml_parser_set_composer_error(yaml_parser_t *parser,
-        const char *problem, yaml_mark_t problem_mark)
+ygp_parser_set_composer_error(ygp_parser_t *parser,
+        const char *problem, ygp_mark_t problem_mark)
 {
-    parser->error = YAML_COMPOSER_ERROR;
+    parser->error = YGP_COMPOSER_ERROR;
     parser->problem = problem;
     parser->problem_mark = problem_mark;
 
@@ -131,11 +131,11 @@ yaml_parser_set_composer_error(yaml_parser_t *parser,
  */
 
 static int
-yaml_parser_set_composer_error_context(yaml_parser_t *parser,
-        const char *context, yaml_mark_t context_mark,
-        const char *problem, yaml_mark_t problem_mark)
+ygp_parser_set_composer_error_context(ygp_parser_t *parser,
+        const char *context, ygp_mark_t context_mark,
+        const char *problem, ygp_mark_t problem_mark)
 {
-    parser->error = YAML_COMPOSER_ERROR;
+    parser->error = YGP_COMPOSER_ERROR;
     parser->context = context;
     parser->context_mark = context_mark;
     parser->problem = problem;
@@ -149,10 +149,10 @@ yaml_parser_set_composer_error_context(yaml_parser_t *parser,
  */
 
 static void
-yaml_parser_delete_aliases(yaml_parser_t *parser)
+ygp_parser_delete_aliases(ygp_parser_t *parser)
 {
     while (!STACK_EMPTY(parser, parser->aliases)) {
-        yaml_free(POP(parser, parser->aliases).anchor);
+        ygp_free(POP(parser, parser->aliases).anchor);
     }
     STACK_DEL(parser, parser->aliases);
 }
@@ -162,11 +162,11 @@ yaml_parser_delete_aliases(yaml_parser_t *parser)
  */
 
 static int
-yaml_parser_load_document(yaml_parser_t *parser, yaml_event_t *first_event)
+ygp_parser_load_document(ygp_parser_t *parser, ygp_event_t *first_event)
 {
-    yaml_event_t event;
+    ygp_event_t event;
 
-    assert(first_event->type == YAML_DOCUMENT_START_EVENT);
+    assert(first_event->type == YGP_DOCUMENT_START_EVENT);
                         /* DOCUMENT-START is expected. */
 
     parser->document->version_directive
@@ -179,12 +179,12 @@ yaml_parser_load_document(yaml_parser_t *parser, yaml_event_t *first_event)
         = first_event->data.document_start.implicit;
     parser->document->start_mark = first_event->start_mark;
 
-    if (!yaml_parser_parse(parser, &event)) return 0;
+    if (!ygp_parser_parse(parser, &event)) return 0;
 
-    if (!yaml_parser_load_node(parser, &event)) return 0;
+    if (!ygp_parser_load_node(parser, &event)) return 0;
 
-    if (!yaml_parser_parse(parser, &event)) return 0;
-    assert(event.type == YAML_DOCUMENT_END_EVENT);
+    if (!ygp_parser_parse(parser, &event)) return 0;
+    assert(event.type == YGP_DOCUMENT_END_EVENT);
                         /* DOCUMENT-END is expected. */
 
     parser->document->end_implicit = event.data.document_end.implicit;
@@ -198,17 +198,17 @@ yaml_parser_load_document(yaml_parser_t *parser, yaml_event_t *first_event)
  */
 
 static int
-yaml_parser_load_node(yaml_parser_t *parser, yaml_event_t *first_event)
+ygp_parser_load_node(ygp_parser_t *parser, ygp_event_t *first_event)
 {
     switch (first_event->type) {
-        case YAML_ALIAS_EVENT:
-            return yaml_parser_load_alias(parser, first_event);
-        case YAML_SCALAR_EVENT:
-            return yaml_parser_load_scalar(parser, first_event);
-        case YAML_SEQUENCE_START_EVENT:
-            return yaml_parser_load_sequence(parser, first_event);
-        case YAML_MAPPING_START_EVENT:
-            return yaml_parser_load_mapping(parser, first_event);
+        case YGP_ALIAS_EVENT:
+            return ygp_parser_load_alias(parser, first_event);
+        case YGP_SCALAR_EVENT:
+            return ygp_parser_load_scalar(parser, first_event);
+        case YGP_SEQUENCE_START_EVENT:
+            return ygp_parser_load_sequence(parser, first_event);
+        case YGP_MAPPING_START_EVENT:
+            return ygp_parser_load_mapping(parser, first_event);
         default:
             assert(0);  /* Could not happen. */
             return 0;
@@ -222,11 +222,11 @@ yaml_parser_load_node(yaml_parser_t *parser, yaml_event_t *first_event)
  */
 
 static int
-yaml_parser_register_anchor(yaml_parser_t *parser,
-        int index, yaml_char_t *anchor)
+ygp_parser_register_anchor(ygp_parser_t *parser,
+        int index, ygp_char_t *anchor)
 {
-    yaml_alias_data_t data;
-    yaml_alias_data_t *alias_data;
+    ygp_alias_data_t data;
+    ygp_alias_data_t *alias_data;
 
     if (!anchor) return 1;
 
@@ -237,15 +237,15 @@ yaml_parser_register_anchor(yaml_parser_t *parser,
     for (alias_data = parser->aliases.start;
             alias_data != parser->aliases.top; alias_data ++) {
         if (strcmp((char *)alias_data->anchor, (char *)anchor) == 0) {
-            yaml_free(anchor);
-            return yaml_parser_set_composer_error_context(parser,
+            ygp_free(anchor);
+            return ygp_parser_set_composer_error_context(parser,
                     "found duplicate anchor; first occurence",
                     alias_data->mark, "second occurence", data.mark);
         }
     }
 
     if (!PUSH(parser, parser->aliases, data)) {
-        yaml_free(anchor);
+        ygp_free(anchor);
         return 0;
     }
 
@@ -257,21 +257,21 @@ yaml_parser_register_anchor(yaml_parser_t *parser,
  */
 
 static int
-yaml_parser_load_alias(yaml_parser_t *parser, yaml_event_t *first_event)
+ygp_parser_load_alias(ygp_parser_t *parser, ygp_event_t *first_event)
 {
-    yaml_char_t *anchor = first_event->data.alias.anchor;
-    yaml_alias_data_t *alias_data;
+    ygp_char_t *anchor = first_event->data.alias.anchor;
+    ygp_alias_data_t *alias_data;
 
     for (alias_data = parser->aliases.start;
             alias_data != parser->aliases.top; alias_data ++) {
         if (strcmp((char *)alias_data->anchor, (char *)anchor) == 0) {
-            yaml_free(anchor);
+            ygp_free(anchor);
             return alias_data->index;
         }
     }
 
-    yaml_free(anchor);
-    return yaml_parser_set_composer_error(parser, "found undefined alias",
+    ygp_free(anchor);
+    return ygp_parser_set_composer_error(parser, "found undefined alias",
             first_event->start_mark);
 }
 
@@ -280,17 +280,17 @@ yaml_parser_load_alias(yaml_parser_t *parser, yaml_event_t *first_event)
  */
 
 static int
-yaml_parser_load_scalar(yaml_parser_t *parser, yaml_event_t *first_event)
+ygp_parser_load_scalar(ygp_parser_t *parser, ygp_event_t *first_event)
 {
-    yaml_node_t node;
+    ygp_node_t node;
     int index;
-    yaml_char_t *tag = first_event->data.scalar.tag;
+    ygp_char_t *tag = first_event->data.scalar.tag;
 
     if (!STACK_LIMIT(parser, parser->document->nodes, INT_MAX-1)) goto error;
 
     if (!tag || strcmp((char *)tag, "!") == 0) {
-        yaml_free(tag);
-        tag = yaml_strdup((yaml_char_t *)YAML_DEFAULT_SCALAR_TAG);
+        ygp_free(tag);
+        tag = ygp_strdup((ygp_char_t *)YGP_DEFAULT_SCALAR_TAG);
         if (!tag) goto error;
     }
 
@@ -302,15 +302,15 @@ yaml_parser_load_scalar(yaml_parser_t *parser, yaml_event_t *first_event)
 
     index = parser->document->nodes.top - parser->document->nodes.start;
 
-    if (!yaml_parser_register_anchor(parser, index,
+    if (!ygp_parser_register_anchor(parser, index,
                 first_event->data.scalar.anchor)) return 0;
 
     return index;
 
 error:
-    yaml_free(tag);
-    yaml_free(first_event->data.scalar.anchor);
-    yaml_free(first_event->data.scalar.value);
+    ygp_free(tag);
+    ygp_free(first_event->data.scalar.anchor);
+    ygp_free(first_event->data.scalar.value);
     return 0;
 }
 
@@ -319,23 +319,23 @@ error:
  */
 
 static int
-yaml_parser_load_sequence(yaml_parser_t *parser, yaml_event_t *first_event)
+ygp_parser_load_sequence(ygp_parser_t *parser, ygp_event_t *first_event)
 {
-    yaml_event_t event;
-    yaml_node_t node;
+    ygp_event_t event;
+    ygp_node_t node;
     struct {
-        yaml_node_item_t *start;
-        yaml_node_item_t *end;
-        yaml_node_item_t *top;
+        ygp_node_item_t *start;
+        ygp_node_item_t *end;
+        ygp_node_item_t *top;
     } items = { NULL, NULL, NULL };
     int index, item_index;
-    yaml_char_t *tag = first_event->data.sequence_start.tag;
+    ygp_char_t *tag = first_event->data.sequence_start.tag;
 
     if (!STACK_LIMIT(parser, parser->document->nodes, INT_MAX-1)) goto error;
 
     if (!tag || strcmp((char *)tag, "!") == 0) {
-        yaml_free(tag);
-        tag = yaml_strdup((yaml_char_t *)YAML_DEFAULT_SEQUENCE_TAG);
+        ygp_free(tag);
+        tag = ygp_strdup((ygp_char_t *)YGP_DEFAULT_SEQUENCE_TAG);
         if (!tag) goto error;
     }
 
@@ -349,21 +349,21 @@ yaml_parser_load_sequence(yaml_parser_t *parser, yaml_event_t *first_event)
 
     index = parser->document->nodes.top - parser->document->nodes.start;
 
-    if (!yaml_parser_register_anchor(parser, index,
+    if (!ygp_parser_register_anchor(parser, index,
                 first_event->data.sequence_start.anchor)) return 0;
 
-    if (!yaml_parser_parse(parser, &event)) return 0;
+    if (!ygp_parser_parse(parser, &event)) return 0;
 
-    while (event.type != YAML_SEQUENCE_END_EVENT) {
+    while (event.type != YGP_SEQUENCE_END_EVENT) {
         if (!STACK_LIMIT(parser,
                     parser->document->nodes.start[index-1].data.sequence.items,
                     INT_MAX-1)) return 0;
-        item_index = yaml_parser_load_node(parser, &event);
+        item_index = ygp_parser_load_node(parser, &event);
         if (!item_index) return 0;
         if (!PUSH(parser,
                     parser->document->nodes.start[index-1].data.sequence.items,
                     item_index)) return 0;
-        if (!yaml_parser_parse(parser, &event)) return 0;
+        if (!ygp_parser_parse(parser, &event)) return 0;
     }
 
     parser->document->nodes.start[index-1].end_mark = event.end_mark;
@@ -371,8 +371,8 @@ yaml_parser_load_sequence(yaml_parser_t *parser, yaml_event_t *first_event)
     return index;
 
 error:
-    yaml_free(tag);
-    yaml_free(first_event->data.sequence_start.anchor);
+    ygp_free(tag);
+    ygp_free(first_event->data.sequence_start.anchor);
     return 0;
 }
 
@@ -381,24 +381,24 @@ error:
  */
 
 static int
-yaml_parser_load_mapping(yaml_parser_t *parser, yaml_event_t *first_event)
+ygp_parser_load_mapping(ygp_parser_t *parser, ygp_event_t *first_event)
 {
-    yaml_event_t event;
-    yaml_node_t node;
+    ygp_event_t event;
+    ygp_node_t node;
     struct {
-        yaml_node_pair_t *start;
-        yaml_node_pair_t *end;
-        yaml_node_pair_t *top;
+        ygp_node_pair_t *start;
+        ygp_node_pair_t *end;
+        ygp_node_pair_t *top;
     } pairs = { NULL, NULL, NULL };
     int index;
-    yaml_node_pair_t pair;
-    yaml_char_t *tag = first_event->data.mapping_start.tag;
+    ygp_node_pair_t pair;
+    ygp_char_t *tag = first_event->data.mapping_start.tag;
 
     if (!STACK_LIMIT(parser, parser->document->nodes, INT_MAX-1)) goto error;
 
     if (!tag || strcmp((char *)tag, "!") == 0) {
-        yaml_free(tag);
-        tag = yaml_strdup((yaml_char_t *)YAML_DEFAULT_MAPPING_TAG);
+        ygp_free(tag);
+        tag = ygp_strdup((ygp_char_t *)YGP_DEFAULT_MAPPING_TAG);
         if (!tag) goto error;
     }
 
@@ -412,24 +412,24 @@ yaml_parser_load_mapping(yaml_parser_t *parser, yaml_event_t *first_event)
 
     index = parser->document->nodes.top - parser->document->nodes.start;
 
-    if (!yaml_parser_register_anchor(parser, index,
+    if (!ygp_parser_register_anchor(parser, index,
                 first_event->data.mapping_start.anchor)) return 0;
 
-    if (!yaml_parser_parse(parser, &event)) return 0;
+    if (!ygp_parser_parse(parser, &event)) return 0;
 
-    while (event.type != YAML_MAPPING_END_EVENT) {
+    while (event.type != YGP_MAPPING_END_EVENT) {
         if (!STACK_LIMIT(parser,
                     parser->document->nodes.start[index-1].data.mapping.pairs,
                     INT_MAX-1)) return 0;
-        pair.key = yaml_parser_load_node(parser, &event);
+        pair.key = ygp_parser_load_node(parser, &event);
         if (!pair.key) return 0;
-        if (!yaml_parser_parse(parser, &event)) return 0;
-        pair.value = yaml_parser_load_node(parser, &event);
+        if (!ygp_parser_parse(parser, &event)) return 0;
+        pair.value = ygp_parser_load_node(parser, &event);
         if (!pair.value) return 0;
         if (!PUSH(parser,
                     parser->document->nodes.start[index-1].data.mapping.pairs,
                     pair)) return 0;
-        if (!yaml_parser_parse(parser, &event)) return 0;
+        if (!ygp_parser_parse(parser, &event)) return 0;
     }
 
     parser->document->nodes.start[index-1].end_mark = event.end_mark;
@@ -437,8 +437,8 @@ yaml_parser_load_mapping(yaml_parser_t *parser, yaml_event_t *first_event)
     return index;
 
 error:
-    yaml_free(tag);
-    yaml_free(first_event->data.mapping_start.anchor);
+    ygp_free(tag);
+    ygp_free(first_event->data.mapping_start.anchor);
     return 0;
 }
 

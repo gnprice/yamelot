@@ -1,7 +1,7 @@
-#include <yaml.h>
+#include <ygp.h>
 
-YAML_DECLARE(int)
-yaml_parser_update_buffer(yaml_parser_t *parser, size_t length);
+YGP_DECLARE(int)
+ygp_parser_update_buffer(ygp_parser_t *parser, size_t length);
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -116,7 +116,7 @@ char *bom_original = "Hi is \xd0\x9f\xd1\x80\xd0\xb8\xd0\xb2\xd0\xb5\xd1\x82";
 
 int check_utf8_sequences(void)
 {
-    yaml_parser_t parser;
+    ygp_parser_t parser;
     int failed = 0;
     int k;
     printf("checking utf-8 sequences...\n");
@@ -129,9 +129,9 @@ int check_utf8_sequences(void)
         printf("\t%s:\n", title);
         while(1) {
             while (*end != '|' && *end != '!') end++;
-            yaml_parser_initialize(&parser);
-            yaml_parser_set_input_string(&parser, (unsigned char *)start, end-start);
-            result = yaml_parser_update_buffer(&parser, end-start);
+            ygp_parser_initialize(&parser);
+            ygp_parser_set_input_string(&parser, (unsigned char *)start, end-start);
+            result = ygp_parser_update_buffer(&parser, end-start);
             if (result != check) {
                 printf("\t\t- ");
                 failed ++;
@@ -142,7 +142,7 @@ int check_utf8_sequences(void)
             if (!parser.error) {
                 printf("(no error)\n");
             }
-            else if (parser.error == YAML_READER_ERROR) {
+            else if (parser.error == YGP_READER_ERROR) {
                 if (parser.problem_value != -1) {
                     printf("(reader error: %s: #%X at %d)\n",
                             parser.problem, parser.problem_value, parser.problem_offset);
@@ -154,7 +154,7 @@ int check_utf8_sequences(void)
             }
             if (*end == '!') break;
             start = ++end;
-            yaml_parser_delete(&parser);
+            ygp_parser_delete(&parser);
         };
         printf("\n");
     }
@@ -164,7 +164,7 @@ int check_utf8_sequences(void)
 
 int check_boms(void)
 {
-    yaml_parser_t parser;
+    ygp_parser_t parser;
     int failed = 0;
     int k;
     printf("checking boms...\n");
@@ -176,9 +176,9 @@ int check_boms(void)
         char *end = start;
         while (*end != '!') end++;
         printf("\t%s: ", title);
-        yaml_parser_initialize(&parser);
-        yaml_parser_set_input_string(&parser, (unsigned char *)start, end-start);
-        result = yaml_parser_update_buffer(&parser, end-start);
+        ygp_parser_initialize(&parser);
+        ygp_parser_set_input_string(&parser, (unsigned char *)start, end-start);
+        result = ygp_parser_update_buffer(&parser, end-start);
         if (!result) {
             printf("- (reader error: %s at %d)\n", parser.problem, parser.problem_offset);
             failed++;
@@ -196,7 +196,7 @@ int check_boms(void)
                 printf("+\n");
             }
         }
-        yaml_parser_delete(&parser);
+        ygp_parser_delete(&parser);
     }
     printf("checking boms: %d fail(s)\n", failed);
     return failed;
@@ -206,7 +206,7 @@ int check_boms(void)
 
 int check_long_utf8(void)
 {
-    yaml_parser_t parser;
+    ygp_parser_t parser;
     int k = 0;
     int j;
     int failed = 0;
@@ -227,11 +227,11 @@ int check_long_utf8(void)
             buffer[k++] = '\xaf';
         }
     }
-    yaml_parser_initialize(&parser);
-    yaml_parser_set_input_string(&parser, buffer, 3+LONG*2);
+    ygp_parser_initialize(&parser);
+    ygp_parser_set_input_string(&parser, buffer, 3+LONG*2);
     for (k = 0; k < LONG; k++) {
         if (!parser.unread) {
-            if (!yaml_parser_update_buffer(&parser, 1)) {
+            if (!ygp_parser_update_buffer(&parser, 1)) {
                 printf("\treader error: %s at %d\n", parser.problem, parser.problem_offset);
                 failed = 1;
                 break;
@@ -261,7 +261,7 @@ int check_long_utf8(void)
         parser.unread -= 1;
     }
     if (!failed) {
-        if (!yaml_parser_update_buffer(&parser, 1)) {
+        if (!ygp_parser_update_buffer(&parser, 1)) {
             printf("\treader error: %s at %d\n", parser.problem, parser.problem_offset);
             failed = 1;
         }
@@ -270,7 +270,7 @@ int check_long_utf8(void)
             failed = 1;
         }
     }
-    yaml_parser_delete(&parser);
+    ygp_parser_delete(&parser);
     free(buffer);
     printf("checking a long utf8 sequence: %d fail(s)\n", failed);
     return failed;
@@ -278,7 +278,7 @@ int check_long_utf8(void)
 
 int check_long_utf16(void)
 {
-    yaml_parser_t parser;
+    ygp_parser_t parser;
     int k = 0;
     int j;
     int failed = 0;
@@ -298,11 +298,11 @@ int check_long_utf16(void)
             buffer[k++] = '\x04';
         }
     }
-    yaml_parser_initialize(&parser);
-    yaml_parser_set_input_string(&parser, buffer, 2+LONG*2);
+    ygp_parser_initialize(&parser);
+    ygp_parser_set_input_string(&parser, buffer, 2+LONG*2);
     for (k = 0; k < LONG; k++) {
         if (!parser.unread) {
-            if (!yaml_parser_update_buffer(&parser, 1)) {
+            if (!ygp_parser_update_buffer(&parser, 1)) {
                 printf("\treader error: %s at %d\n", parser.problem, parser.problem_offset);
                 failed = 1;
                 break;
@@ -332,7 +332,7 @@ int check_long_utf16(void)
         parser.unread -= 1;
     }
     if (!failed) {
-        if (!yaml_parser_update_buffer(&parser, 1)) {
+        if (!ygp_parser_update_buffer(&parser, 1)) {
             printf("\treader error: %s at %d\n", parser.problem, parser.problem_offset);
             failed = 1;
         }
@@ -341,7 +341,7 @@ int check_long_utf16(void)
             failed = 1;
         }
     }
-    yaml_parser_delete(&parser);
+    ygp_parser_delete(&parser);
     free(buffer);
     printf("checking a long utf16 sequence: %d fail(s)\n", failed);
     return failed;

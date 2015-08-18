@@ -1,4 +1,4 @@
-#include <yaml.h>
+#include <ygp.h>
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -16,14 +16,14 @@ main(void)
     int patch = -1;
     char buf[64];
 
-    yaml_get_version(&major, &minor, &patch);
+    ygp_get_version(&major, &minor, &patch);
     sprintf(buf, "%d.%d.%d", major, minor, patch);
-    assert(strcmp(buf, yaml_get_version_string()) == 0);
+    assert(strcmp(buf, ygp_get_version_string()) == 0);
 
     /* Print structure sizes. */
-    printf("sizeof(token) = %d\n", sizeof(yaml_token_t));
-    printf("sizeof(event) = %d\n", sizeof(yaml_event_t));
-    printf("sizeof(parser) = %d\n", sizeof(yaml_parser_t));
+    printf("sizeof(token) = %d\n", sizeof(ygp_token_t));
+    printf("sizeof(event) = %d\n", sizeof(ygp_event_t));
+    printf("sizeof(parser) = %d\n", sizeof(ygp_parser_t));
 
     return 0;
 }

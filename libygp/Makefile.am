@@ -6,7 +6,7 @@ SUBDIRS = include src . tests win32
 EXTRA_DIST = README LICENSE CMakeLists.txt doc/doxygen.cfg
 
 pkgconfigdir = $(libdir)/pkgconfig
-pkgconfig_DATA = yaml-0.1.pc
+pkgconfig_DATA = ygp-0.1.pc
 
 maintainer-clean-local:
 	-rm -f aclocal.m4 config.h.in configure config/*

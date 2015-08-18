@@ -2,7 +2,7 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="7.10"
-	Name="yaml"
+	Name="ygp"
 	ProjectGUID="{5CE8051A-3F0C-4C39-B1C0-3338E48BA60F}"
 	Keyword="Win32Proj">
 	<Platforms>
@@ -20,7 +20,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="..;../../include"
-				PreprocessorDefinitions="HAVE_CONFIG_H;YAML_DECLARE_STATIC"
+				PreprocessorDefinitions="HAVE_CONFIG_H;YGP_DECLARE_STATIC"
 				MinimalRebuild="TRUE"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
@@ -32,7 +32,7 @@
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLibrarianTool"
-				OutputFile="$(OutDir)/yaml.lib"/>
+				OutputFile="$(OutDir)/ygp.lib"/>
 			<Tool
 				Name="VCMIDLTool"/>
 			<Tool
@@ -61,7 +61,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				AdditionalIncludeDirectories="..;../../include"
-				PreprocessorDefinitions="HAVE_CONFIG_H;YAML_DECLARE_STATIC"
+				PreprocessorDefinitions="HAVE_CONFIG_H;YGP_DECLARE_STATIC"
 				RuntimeLibrary="2"
 				UsePrecompiledHeader="0"
 				WarningLevel="3"
@@ -71,7 +71,7 @@
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLibrarianTool"
-				OutputFile="$(OutDir)/yaml.lib"/>
+				OutputFile="$(OutDir)/ygp.lib"/>
 			<Tool
 				Name="VCMIDLTool"/>
 			<Tool
@@ -132,10 +132,10 @@
 				RelativePath="..\config.h">
 			</File>
 			<File
-				RelativePath="..\..\include\yaml.h">
+				RelativePath="..\..\include\ygp.h">
 			</File>
 			<File
-				RelativePath="..\..\src\yaml_private.h">
+				RelativePath="..\..\src\ygp_private.h">
 			</File>
 		</Filter>
 		<Filter

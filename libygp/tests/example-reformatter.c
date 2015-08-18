@@ -1,5 +1,5 @@
 
-#include <yaml.h>
+#include <ygp.h>
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -13,9 +13,9 @@ main(int argc, char *argv[])
     int k;
     int done = 0;
 
-    yaml_parser_t parser;
-    yaml_emitter_t emitter;
-    yaml_event_t event;
+    ygp_parser_t parser;
+    ygp_emitter_t emitter;
+    ygp_event_t event;
 
     /* Clear the objects. */
 
@@ -65,22 +65,22 @@ main(int argc, char *argv[])
 
     /* Initialize the parser and emitter objects. */
 
-    if (!yaml_parser_initialize(&parser))
+    if (!ygp_parser_initialize(&parser))
         goto parser_error;
 
-    if (!yaml_emitter_initialize(&emitter))
+    if (!ygp_emitter_initialize(&emitter))
         goto emitter_error;
 
     /* Set the parser parameters. */
 
-    yaml_parser_set_input_file(&parser, stdin);
+    ygp_parser_set_input_file(&parser, stdin);
 
     /* Set the emitter parameters. */
 
-    yaml_emitter_set_output_file(&emitter, stdout);
+    ygp_emitter_set_output_file(&emitter, stdout);
 
-    yaml_emitter_set_canonical(&emitter, canonical);
-    yaml_emitter_set_unicode(&emitter, unicode);
+    ygp_emitter_set_canonical(&emitter, canonical);
+    ygp_emitter_set_unicode(&emitter, unicode);
 
     /* The main loop. */
 
@@ -88,23 +88,23 @@ main(int argc, char *argv[])
     {
         /* Get the next event. */
 
-        if (!yaml_parser_parse(&parser, &event))
+        if (!ygp_parser_parse(&parser, &event))
             goto parser_error;
 
         /* Check if this is the stream end. */
 
-        if (event.type == YAML_STREAM_END_EVENT) {
+        if (event.type == YGP_STREAM_END_EVENT) {
             done = 1;
         }
 
         /* Emit the event. */
 
-        if (!yaml_emitter_emit(&emitter, &event))
+        if (!ygp_emitter_emit(&emitter, &event))
             goto emitter_error;
     }
 
-    yaml_parser_delete(&parser);
-    yaml_emitter_delete(&emitter);
+    ygp_parser_delete(&parser);
+    ygp_emitter_delete(&emitter);
 
     return 0;
 
@@ -114,11 +114,11 @@ parser_error:
 
     switch (parser.error)
     {
-        case YAML_MEMORY_ERROR:
+        case YGP_MEMORY_ERROR:
             fprintf(stderr, "Memory error: Not enough memory for parsing\n");
             break;
 
-        case YAML_READER_ERROR:
+        case YGP_READER_ERROR:
             if (parser.problem_value != -1) {
                 fprintf(stderr, "Reader error: %s: #%X at %d\n", parser.problem,
                         parser.problem_value, parser.problem_offset);
@@ -129,7 +129,7 @@ parser_error:
             }
             break;
 
-        case YAML_SCANNER_ERROR:
+        case YGP_SCANNER_ERROR:
             if (parser.context) {
                 fprintf(stderr, "Scanner error: %s at line %d, column %d\n"
                         "%s at line %d, column %d\n", parser.context,
@@ -144,7 +144,7 @@ parser_error:
             }
             break;
 
-        case YAML_PARSER_ERROR:
+        case YGP_PARSER_ERROR:
             if (parser.context) {
                 fprintf(stderr, "Parser error: %s at line %d, column %d\n"
                         "%s at line %d, column %d\n", parser.context,
@@ -165,8 +165,8 @@ parser_error:
             break;
     }
 
-    yaml_parser_delete(&parser);
-    yaml_emitter_delete(&emitter);
+    ygp_parser_delete(&parser);
+    ygp_emitter_delete(&emitter);
 
     return 1;
 
@@ -176,15 +176,15 @@ emitter_error:
 
     switch (emitter.error)
     {
-        case YAML_MEMORY_ERROR:
+        case YGP_MEMORY_ERROR:
             fprintf(stderr, "Memory error: Not enough memory for emitting\n");
             break;
 
-        case YAML_WRITER_ERROR:
+        case YGP_WRITER_ERROR:
             fprintf(stderr, "Writer error: %s\n", emitter.problem);
             break;
 
-        case YAML_EMITTER_ERROR:
+        case YGP_EMITTER_ERROR:
             fprintf(stderr, "Emitter error: %s\n", emitter.problem);
             break;
 
@@ -194,8 +194,8 @@ emitter_error:
             break;
     }
 
-    yaml_parser_delete(&parser);
-    yaml_emitter_delete(&emitter);
+    ygp_parser_delete(&parser);
+    ygp_emitter_delete(&emitter);
 
     return 1;
 }
