@@ -2739,7 +2739,6 @@ ygp_parser_scan_block_scalar(ygp_parser_t *parser, ygp_token_t *token,
     ygp_string_t string = NULL_STRING;
     ygp_string_t leading_break = NULL_STRING;
     ygp_string_t trailing_breaks = NULL_STRING;
-    int chomping = 0;
     int increment = 0;
     int indent = 0;
     int leading_blank = 0;
@@ -2763,32 +2762,9 @@ ygp_parser_scan_block_scalar(ygp_parser_t *parser, ygp_token_t *token,
 
     if (CHECK(parser->buffer, '+') || CHECK(parser->buffer, '-'))
     {
-        /* Set the chomping method and eat the indicator. */
-
-        chomping = CHECK(parser->buffer, '+') ? +1 : -1;
-
-        SKIP(parser);
-
-        /* Check for an indentation indicator. */
-
-        if (!CACHE(parser, 1)) goto error;
-
-        if (IS_DIGIT(parser->buffer))
-        {
-            /* Check that the intendation is greater than 0. */
-
-            if (CHECK(parser->buffer, '0')) {
-                ygp_parser_set_scanner_error(parser, "while scanning a block scalar",
-                        start_mark, "found an intendation indicator equal to 0");
-                goto error;
-            }
-
-            /* Get the intendation level and eat the indicator. */
-
-            increment = AS_DIGIT(parser->buffer);
-
-            SKIP(parser);
-        }
+        ygp_parser_set_scanner_error(parser, "while scanning a block scalar",
+                start_mark, "found an unsuported chomping indicator");
+        goto error;
     }
 
     /* Do the same as above, but in the opposite order. */
@@ -2808,9 +2784,8 @@ ygp_parser_scan_block_scalar(ygp_parser_t *parser, ygp_token_t *token,
         if (!CACHE(parser, 1)) goto error;
 
         if (CHECK(parser->buffer, '+') || CHECK(parser->buffer, '-')) {
-            chomping = CHECK(parser->buffer, '+') ? +1 : -1;
-
-            SKIP(parser);
+            ygp_parser_set_scanner_error(parser, "while scanning a block scalar",
+                    start_mark, "found an unsuported chomping indicator");
         }
     }
 
@@ -2919,14 +2894,8 @@ ygp_parser_scan_block_scalar(ygp_parser_t *parser, ygp_token_t *token,
                     &indent, &trailing_breaks, start_mark, &end_mark)) goto error;
     }
 
-    /* Chomp the tail. */
-
-    if (chomping != -1) {
-        if (!JOIN(parser, string, leading_break)) goto error;
-    }
-    if (chomping == 1) {
-        if (!JOIN(parser, string, trailing_breaks)) goto error;
-    }
+    /* Add the trailing newline on */
+    if (!JOIN(parser, string, leading_break)) goto error;
 
     /* Create a token. */
 
