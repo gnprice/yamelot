@@ -142,6 +142,14 @@ class YAMLEventHandler(object):
                         )
                     )
 
+                if (
+                    value == '' and
+                    event.data.scalar.style == lib.YAML_PLAIN_SCALAR_STYLE
+                ):
+                    raise self.build_custom_error(
+                        'Missing value'
+                    )
+
                 value = self.convert_scalar(value)
                 self.add_anchor(event.data.scalar.anchor, value)
                 self.check_tag(event.data.scalar.tag)
