@@ -76,6 +76,10 @@ class YAMLEventHandler(object):
 
     def convert_scalar(self, value):
         if value.isdigit():
+            if value[0] == '0':
+                raise YAMLError(
+                    'Octal scalers are not supported {!r}'.format(value)
+                )
             value = int(value)
         elif value == 'null':
             value = None
