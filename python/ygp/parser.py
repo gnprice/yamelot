@@ -137,7 +137,7 @@ class YAMLEventHandler(object):
 
                 if event.data.scalar.style == lib.YAML_FOLDED_SCALAR_STYLE:
                     raise self.build_custom_error(
-                        'Folded Scalars are not alowed {!r}'.format(
+                        'Folded Scalars are not allowed {!r}'.format(
                             value
                         )
                     )
@@ -148,6 +148,13 @@ class YAMLEventHandler(object):
                 ):
                     raise self.build_custom_error(
                         'Missing value'
+                    )
+                if (
+                    value == '~' and
+                    event.data.scalar.style == lib.YAML_PLAIN_SCALAR_STYLE
+                ):
+                    raise self.build_custom_error(
+                        '\'~\' not allowed as an alias to null'
                     )
 
                 value = self.convert_scalar(value)
