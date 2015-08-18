@@ -1,0 +1,33 @@
+test_1a: ''
+test_2a: 'null'
+test_3a: 'true'
+test_4a: 'false'
+
+test_1b: ""
+test_2b: "null"
+test_3b: "true"
+test_4b: "false"
+
+test_2c: |
+    null
+test_3c: |
+    true
+test_4c: |
+    false
+
+================================================================================
+{
+    "test_1a": "",
+    "test_2a": "null",
+    "test_3a": "true",
+    "test_4a": "false",
+
+    "test_1b": "",
+    "test_2b": "null",
+    "test_3b": "true",
+    "test_4b": "false",
+
+    "test_2c": "null\n",
+    "test_3c": "true\n",
+    "test_4c": "false\n"
+}
