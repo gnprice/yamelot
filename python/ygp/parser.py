@@ -134,6 +134,14 @@ class YAMLEventHandler(object):
                     event.data.scalar.value,
                     event.data.scalar.length,
                 )
+
+                if event.data.scalar.style == lib.YAML_FOLDED_SCALAR_STYLE:
+                    raise self.build_custom_error(
+                        'Folded Scalars are not alowed {!r}'.format(
+                            value
+                        )
+                    )
+
                 value = self.convert_scalar(value)
                 self.add_anchor(event.data.scalar.anchor, value)
                 self.check_tag(event.data.scalar.tag)

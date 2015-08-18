@@ -1,0 +1,10 @@
+test: |
+    This is a test
+    A very cool test
+
+        So Cool!
+================================================================================
+
+{
+    "test": "This is a test\nA very cool test\n\n    So Cool!\n"
+}

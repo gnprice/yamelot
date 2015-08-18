@@ -21,7 +21,11 @@ typedef enum yaml_sequence_style_e { ...  } yaml_sequence_style_t;
 
 typedef enum yaml_mapping_style_e { ...  } yaml_mapping_style_t;
 
-typedef enum yaml_scalar_style_e { ...  } yaml_scalar_style_t;
+typedef enum yaml_scalar_style_e {
+    YAML_FOLDED_SCALAR_STYLE,
+
+    ...
+} yaml_scalar_style_t;
 
 typedef enum yaml_event_type_e {
     YAML_DOCUMENT_START_EVENT,
