@@ -112,7 +112,7 @@ class IntegrationTestItem(pytest.Item):
         value = excinfo.value
         if isinstance(value, TestTextParseError):
             return 'TestTextParseError format error: {}\n{}'.format(
-                value.error, value.expected
+                value.error, value.test_text
             )
         if isinstance(value, YGPParseError):
             return 'YGP format error: {}\n{}'.format(
