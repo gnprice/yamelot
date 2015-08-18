@@ -6,38 +6,18 @@ from collections import OrderedDict
 from ygp._yaml import ffi, lib
 
 
-class YAMLError(ValueError):
+class YGPError(Exception):
     pass
 
 
-def raise_error(parser):
-    buf = []
-    if parser.problem != ffi.NULL:
-        buf.append(ffi.string(parser.problem))
-
-        buf.append(
-            'at line: {} col: {}'.format(
-                parser.problem_mark.line + 1,
-                parser.problem_mark.column + 1,
-            )
-        )
-
-    if parser.context != ffi.NULL:
-        buf.append(ffi.string(parser.context))
-
-        buf.append(
-            'at line: {} col: {}'.format(
-                parser.context_mark.line + 1,
-                parser.context_mark.column + 1,
-            )
-        )
-
-    raise YAMLError(' '.join(buf))
+class YGPValueError(YGPError, ValueError):
+    pass
 
 
 class YAMLEventHandler(object):
 
-    def __init__(self):
+    def __init__(self, parser):
+        self.parser = parser
         self.stack = []
         self.anchors = {}
 
@@ -46,6 +26,40 @@ class YAMLEventHandler(object):
         self.map_key = None
 
         self.last_obj = None
+
+    def build_libyaml_error(self):
+        buf = []
+        if self.parser.problem != ffi.NULL:
+            buf.append(ffi.string(self.parser.problem))
+
+            buf.append(
+                'at line: {} col: {}'.format(
+                    self.parser.problem_mark.line + 1,
+                    self.parser.problem_mark.column + 1,
+                )
+            )
+
+        if self.parser.context != ffi.NULL:
+            buf.append(ffi.string(self.parser.context))
+
+            buf.append(
+                'at line: {} col: {}'.format(
+                    self.parser.context_mark.line + 1,
+                    self.parser.context_mark.column + 1,
+                )
+            )
+
+        return YGPValueError(' '.join(buf))
+
+    def build_custom_error(self, msg):
+        buf = [
+            msg,
+            'at line: {} col: {}'.format(
+                self.parser.mark.line + 1,
+                self.parser.mark.column + 1,
+            )
+        ]
+        return YGPValueError(' '.join(buf))
 
     def push_state(self):
         self.stack.append((
@@ -77,7 +91,7 @@ class YAMLEventHandler(object):
     def convert_scalar(self, value):
         if value.isdigit():
             if value[0] == '0':
-                raise YAMLError(
+                raise self.build_custom_error(
                     'Octal scalers are not supported {!r}'.format(value)
                 )
             value = int(value)
@@ -93,28 +107,29 @@ class YAMLEventHandler(object):
         if anchor != ffi.NULL:
             anchor_value = ffi.string(anchor)
             if anchor_value in self.anchors:
-                raise YAMLError(
+                raise self.build_custom_error(
                     'Anchor {} already in use'.format(anchor_value)
                 )
             self.anchors[anchor_value] = value
 
     def check_tag(self, tag):
         if tag != ffi.NULL:
-            raise YAMLError('Tags are not allowed tag={!}'.format(
-                ffi.string(tag)
-            ))
+            raise self.build_custom_error(
+                'Tags are not allowed tag={!}'.format(ffi.string(tag))
+            )
 
-    def process(self, parser):
+    def process(self):
         event = ffi.new('yaml_event_t *')
 
         while True:
-            if not lib.yaml_parser_parse(parser, event):
+            if not lib.yaml_parser_parse(self.parser, event):
                 lib.yaml_event_delete(event)
-                raise_error(parser)
+                raise self.build_libyaml_error()
 
             type_ = event.type
 
             if type_ == lib.YAML_SCALAR_EVENT:
+
                 value = ffi.string(
                     event.data.scalar.value,
                     event.data.scalar.length,
@@ -135,7 +150,7 @@ class YAMLEventHandler(object):
                 try:
                     anchor_value = self.anchors[anchor]
                 except KeyError:
-                    raise YAMLError(
+                    raise self.build_custom_error(
                         'Anchor %s not found' % (
                             ffi.string(event.data.alias.anchor),
                         )
@@ -189,12 +204,12 @@ def loads(string):
     parser = ffi.new('yaml_parser_t *')
 
     if not lib.yaml_parser_initialize(parser):
-        raise Exception('Failed to init')
+        raise YGPError('Failed to init libyaml')
 
     try:
         lib.yaml_parser_set_input_string(parser, string, len(string))
-        event_handler = YAMLEventHandler()
-        return event_handler.process(parser)
+        event_handler = YAMLEventHandler(parser)
+        return event_handler.process()
     finally:
         lib.yaml_parser_delete(parser)
 
@@ -203,11 +218,11 @@ def load(file_obj):
     parser = ffi.new('yaml_parser_t *')
 
     if not lib.yaml_parser_initialize(parser):
-        raise Exception('Failed to init')
+        raise YGPError('Failed to init libyaml')
 
     try:
         lib.yaml_parser_set_input_file(parser, file_obj)
-        event_handler = YAMLEventHandler()
-        return event_handler.process(parser)
+        event_handler = YAMLEventHandler(parser)
+        return event_handler.process()
     finally:
         lib.yaml_parser_delete(parser)

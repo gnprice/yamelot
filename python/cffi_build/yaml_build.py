@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 from cffi import FFI
 ffi = FFI()
 
@@ -52,8 +53,6 @@ typedef struct yaml_mark_s {
     ...;
 } yaml_mark_t;
 
-
-
 typedef struct yaml_parser_s {
     yaml_error_type_t error;
     const char *problem;
@@ -64,6 +63,8 @@ typedef struct yaml_parser_s {
 
     const char *context;
     yaml_mark_t context_mark;
+
+    yaml_mark_t mark;
     ...;
 } yaml_parser_t;
 
