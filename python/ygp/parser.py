@@ -118,6 +118,17 @@ class YAMLEventHandler(object):
                 'Tags are not allowed tag={!r}'.format(ffi.string(tag))
             )
 
+    def add_item(self, value):
+        if self.cur_in == 'seq':
+            self.cur_obj.append(value)
+        elif self.cur_in == 'map' and self.map_key is None:
+            self.map_key = value
+        elif self.cur_in == 'map' and self.map_key:
+            self.set_map(value)
+        else:
+            # NOOP root object
+            pass
+
     def process(self):
         event = ffi.new('yaml_event_t *')
 
@@ -130,50 +141,41 @@ class YAMLEventHandler(object):
 
             if type_ == lib.YAML_SCALAR_EVENT:
 
+                scalar = event.data.scalar
+
                 value = ffi.string(
-                    event.data.scalar.value,
-                    event.data.scalar.length,
+                    scalar.value,
+                    scalar.length,
                 )
 
-                if event.data.scalar.style == lib.YAML_FOLDED_SCALAR_STYLE:
+                if scalar.style == lib.YAML_FOLDED_SCALAR_STYLE:
                     raise self.build_custom_error(
                         'Folded Scalars are not allowed {!r}'.format(
                             value
                         )
                     )
 
-                if (
-                    value == '' and
-                    event.data.scalar.style == lib.YAML_PLAIN_SCALAR_STYLE
-                ):
-                    raise self.build_custom_error('Missing value')
-                if (
-                    value == '~' and
-                    event.data.scalar.style == lib.YAML_PLAIN_SCALAR_STYLE
-                ):
-                    raise self.build_custom_error(
-                        '\'~\' not allowed as an alias to null'
-                    )
+                if scalar.style == lib.YAML_PLAIN_SCALAR_STYLE:
+                    if value == '':
+                        raise self.build_custom_error('Missing value')
+                    if value == '~':
+                        raise self.build_custom_error(
+                            '\'~\' not allowed as an alias to null'
+                        )
 
-                if event.data.scalar.style == lib.YAML_PLAIN_SCALAR_STYLE:
-                    value = self.convert_scalar(value)
-
-                self.add_anchor(event.data.scalar.anchor, value)
-                self.check_tag(event.data.scalar.tag)
-
-                if self.cur_in == 'seq':
-                    self.cur_obj.append(value)
-                elif self.cur_in == 'map' and self.map_key is None:
-                    if event.data.scalar.style in (
-                        lib.YAML_FOLDED_SCALAR_STYLE,
-                        lib.YAML_LITERAL_SCALAR_STYLE
-                    ):
+                if scalar.style == lib.YAML_LITERAL_SCALAR_STYLE:
+                    if self.cur_in == 'map' and self.map_key is None:
                         raise self.build_custom_error(
                             'Literal scalers are not allowed as keys'
                         )
-                    self.map_key = value
-                else:
-                    self.set_map(value)
+
+                self.check_tag(scalar.tag)
+
+                if scalar.style == lib.YAML_PLAIN_SCALAR_STYLE:
+                    value = self.convert_scalar(value)
+
+                self.add_anchor(scalar.anchor, value)
+                self.add_item(value)
 
             elif type_ == lib.YAML_ALIAS_EVENT:
                 anchor = ffi.string(event.data.alias.anchor)
@@ -185,19 +187,14 @@ class YAMLEventHandler(object):
                             ffi.string(event.data.alias.anchor),
                         )
                     )
-                if self.cur_in == 'seq':
-                    self.cur_obj.append(anchor_value)
-                elif self.cur_in == 'map' and self.map_key is None:
-                    self.map_key = anchor_value
-                else:
-                    self.set_map(anchor_value)
+                self.add_item(anchor_value)
 
             elif type_ == lib.YAML_SEQUENCE_START_EVENT:
                 new_seq = []
                 self.add_anchor(event.data.sequence_start.anchor, new_seq)
                 self.check_tag(event.data.sequence_start.tag)
-                if self.cur_in == 'map':
-                    self.set_map(new_seq)
+                self.add_item(new_seq)
+
                 self.push_state()
                 self.cur_obj = new_seq
                 self.cur_in = 'seq'
@@ -209,9 +206,8 @@ class YAMLEventHandler(object):
                 new_map = OrderedDict()
                 self.add_anchor(event.data.mapping_start.anchor, new_map)
                 self.check_tag(event.data.mapping_start.tag)
+                self.add_item(new_map)
 
-                if self.cur_in == 'map':
-                    self.set_map(new_map)
                 self.push_state()
                 self.cur_obj = new_map
                 self.cur_in = 'map'
