@@ -26,9 +26,13 @@ class IntegrationTestFile(pytest.File):
 
     def collect(self):
         test_input = self.fspath.read()
+        should_xfail = test_input.startswith('XFAIL\n')
+        if should_xfail:
+            _, test_input = test_input.split('\n', 1)
+
         if '!' * 80 in test_input:
             input_ygp, _ = test_input.split('!' * 80, 1)
-            return [
+            items = [
                 ExpectedFailingTestItem(
                     name=str(runner),
                     parent=self,
@@ -39,7 +43,7 @@ class IntegrationTestFile(pytest.File):
             ]
         else:
             input_ygp, input_expected = test_input.split('=' * 80)
-            return [
+            items = [
                 IntegrationTestItem(
                     name=str(runner),
                     parent=self,
@@ -50,12 +54,19 @@ class IntegrationTestFile(pytest.File):
                 for runner in runners
             ]
 
+        if should_xfail:
+            for item in items:
+                item.add_marker(py.test.mark.xfail)
+
+        return items
+
 
 class ExpectedFailingTestItem(pytest.Item):
     def __init__(self, name, parent, ygp, executable):
         super(ExpectedFailingTestItem, self).__init__(name, parent)
         self._ygp = ygp
         self._executable = executable
+        self.obj = lambda: 'a'  # Fake for xfail marks
 
     def runtest(self):
         try:
@@ -83,6 +94,7 @@ class IntegrationTestItem(pytest.Item):
         self._ygp = ygp
         self._expected = expected
         self._executable = executable
+        self.obj = lambda: 'a'  # Fake for xfail marks
 
     def runtest(self):
         try:
