@@ -3,8 +3,6 @@ from __future__ import print_function
 
 from collections import OrderedDict, Mapping
 
-from ygp._yaml import ffi, lib
-
 
 class YGPError(Exception):
     pass
@@ -16,7 +14,8 @@ class YGPValueError(YGPError, ValueError):
 
 class YAMLEventHandler(object):
 
-    def __init__(self, parser):
+    def __init__(self, clib, parser):
+        self.clib = clib
         self.parser = parser
         self.stack = []
         self.anchors = {}
@@ -29,8 +28,8 @@ class YAMLEventHandler(object):
 
     def build_libyaml_error(self):
         buf = []
-        if self.parser.problem != ffi.NULL:
-            buf.append(ffi.string(self.parser.problem))
+        if self.parser.problem != self.clib.NULL:
+            buf.append(self.clib.string(self.parser.problem))
 
             buf.append(
                 'at line: {} col: {}'.format(
@@ -39,8 +38,8 @@ class YAMLEventHandler(object):
                 )
             )
 
-        if self.parser.context != ffi.NULL:
-            buf.append(ffi.string(self.parser.context))
+        if self.parser.context != self.clib.NULL:
+            buf.append(self.clib.string(self.parser.context))
 
             buf.append(
                 'at line: {} col: {}'.format(
@@ -107,8 +106,8 @@ class YAMLEventHandler(object):
         return value
 
     def add_anchor(self, anchor, value):
-        if anchor != ffi.NULL:
-            anchor_value = ffi.string(anchor)
+        if anchor != self.clib.NULL:
+            anchor_value = self.clib.string(anchor)
             if anchor_value in self.anchors:
                 raise self.build_custom_error(
                     'Anchor {} already in use'.format(anchor_value)
@@ -116,9 +115,9 @@ class YAMLEventHandler(object):
             self.anchors[anchor_value] = value
 
     def check_tag(self, tag):
-        if tag != ffi.NULL:
+        if tag != self.clib.NULL:
             raise self.build_custom_error(
-                'Tags are not allowed tag={!r}'.format(ffi.string(tag))
+                'Tags are not allowed tag={!r}'.format(self.clib.string(tag))
             )
 
     def add_item(self, value):
@@ -133,32 +132,32 @@ class YAMLEventHandler(object):
             pass
 
     def process(self):
-        event = ffi.new('yaml_event_t *')
+        event = self.clib.new_event()
 
         while True:
-            if not lib.yaml_parser_parse(self.parser, event):
-                lib.yaml_event_delete(event)
+            if not self.clib.parser_parse(self.parser, event):
+                self.clib.event_delete(event)
                 raise self.build_libyaml_error()
 
             type_ = event.type
 
-            if type_ == lib.YAML_SCALAR_EVENT:
+            if type_ == self.clib.SCALAR_EVENT:
 
                 scalar = event.data.scalar
 
-                value = ffi.string(
+                value = self.clib.string(
                     scalar.value,
                     scalar.length,
                 )
 
-                if scalar.style == lib.YAML_FOLDED_SCALAR_STYLE:
+                if scalar.style == self.clib.FOLDED_SCALAR_STYLE:
                     raise self.build_custom_error(
                         'Folded Scalars are not allowed {!r}'.format(
                             value
                         )
                     )
 
-                if scalar.style == lib.YAML_PLAIN_SCALAR_STYLE:
+                if scalar.style == self.clib.PLAIN_SCALAR_STYLE:
                     if value == '':
                         raise self.build_custom_error('Missing value')
                     if value == '~':
@@ -166,7 +165,7 @@ class YAMLEventHandler(object):
                             '\'~\' not allowed as an alias to null'
                         )
 
-                if scalar.style == lib.YAML_LITERAL_SCALAR_STYLE:
+                if scalar.style == self.clib.LITERAL_SCALAR_STYLE:
                     if self.cur_in == 'map' and self.map_key is None:
                         raise self.build_custom_error(
                             'Literal scalers are not allowed as keys'
@@ -174,25 +173,25 @@ class YAMLEventHandler(object):
 
                 self.check_tag(scalar.tag)
 
-                if scalar.style == lib.YAML_PLAIN_SCALAR_STYLE:
+                if scalar.style == self.clib.PLAIN_SCALAR_STYLE:
                     value = self.convert_scalar(value)
 
                 self.add_anchor(scalar.anchor, value)
                 self.add_item(value)
 
-            elif type_ == lib.YAML_ALIAS_EVENT:
-                anchor = ffi.string(event.data.alias.anchor)
+            elif type_ == self.clib.ALIAS_EVENT:
+                anchor = self.clib.string(event.data.alias.anchor)
                 try:
                     anchor_value = self.anchors[anchor]
                 except KeyError:
                     raise self.build_custom_error(
                         'Anchor %s not found' % (
-                            ffi.string(event.data.alias.anchor),
+                            self.clib.string(event.data.alias.anchor),
                         )
                     )
                 self.add_item(anchor_value)
 
-            elif type_ == lib.YAML_SEQUENCE_START_EVENT:
+            elif type_ == self.clib.SEQUENCE_START_EVENT:
                 new_seq = []
                 self.add_anchor(event.data.sequence_start.anchor, new_seq)
                 self.check_tag(event.data.sequence_start.tag)
@@ -202,10 +201,10 @@ class YAMLEventHandler(object):
                 self.cur_obj = new_seq
                 self.cur_in = 'seq'
 
-            elif type_ == lib.YAML_SEQUENCE_END_EVENT:
+            elif type_ == self.clib.SEQUENCE_END_EVENT:
                 self.pop_state()
 
-            elif type_ == lib.YAML_MAPPING_START_EVENT:
+            elif type_ == self.clib.MAPPING_START_EVENT:
                 new_map = OrderedDict()
                 self.add_anchor(event.data.mapping_start.anchor, new_map)
                 self.check_tag(event.data.mapping_start.tag)
@@ -215,45 +214,45 @@ class YAMLEventHandler(object):
                 self.cur_obj = new_map
                 self.cur_in = 'map'
 
-            elif type_ == lib.YAML_MAPPING_END_EVENT:
+            elif type_ == self.clib.MAPPING_END_EVENT:
                 self.pop_state()
 
-            elif type_ == lib.YAML_DOCUMENT_START_EVENT:
+            elif type_ == self.clib.DOCUMENT_START_EVENT:
                 pass
-            elif type_ == lib.YAML_DOCUMENT_END_EVENT:
-                lib.yaml_event_delete(event)
+            elif type_ == self.clib.DOCUMENT_END_EVENT:
+                self.clib.event_delete(event)
                 break
 
-            lib.yaml_event_delete(event)
+            self.clib.event_delete(event)
 
         return self.last_obj
 
 
-def loads(string):
-    parser = ffi.new('yaml_parser_t *')
+def loads(string, clib):
+    parser = clib.new_parser()
 
-    if not lib.yaml_parser_initialize(parser):
+    if not clib.parser_initialize(parser):
         raise YGPError('Failed to init libyaml')
 
     try:
-        lib.yaml_parser_set_encoding(parser, lib.YAML_UTF8_ENCODING)
-        lib.yaml_parser_set_input_string(parser, string, len(string))
-        event_handler = YAMLEventHandler(parser)
+        clib.parser_set_encoding(parser, clib.UTF8_ENCODING)
+        clib.parser_set_input_string(parser, string, len(string))
+        event_handler = YAMLEventHandler(clib, parser)
         return event_handler.process()
     finally:
-        lib.yaml_parser_delete(parser)
+        clib.parser_delete(parser)
 
 
-def load(file_obj):
-    parser = ffi.new('yaml_parser_t *')
+def load(file_obj, clib):
+    parser = clib.new_parser()
 
-    if not lib.yaml_parser_initialize(parser):
+    if not clib.parser_initialize(parser):
         raise YGPError('Failed to init libyaml')
 
     try:
-        lib.yaml_parser_set_encoding(parser, lib.YAML_UTF8_ENCODING)
-        lib.yaml_parser_set_input_file(parser, file_obj)
-        event_handler = YAMLEventHandler(parser)
+        clib.parser_set_encoding(parser, clib.UTF8_ENCODING)
+        clib.parser_set_input_file(parser, file_obj)
+        event_handler = YAMLEventHandler(clib, parser)
         return event_handler.process()
     finally:
-        lib.yaml_parser_delete(parser)
+        clib.parser_delete(parser)

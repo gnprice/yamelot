@@ -4,9 +4,12 @@ import sys
 import json
 
 from ygp.parser import loads
+from ygp.clib import yaml
+
 
 def main(s):
-    return json.dumps(loads(s))
+    return json.dumps(loads(s, yaml))
+
 
 if __name__ == '__main__':
     sys.stdout.write(main(sys.stdin.read()))

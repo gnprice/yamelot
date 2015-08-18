@@ -4,7 +4,7 @@ ffi = FFI()
 
 
 ffi.set_source(
-    'ygp._yaml',
+    'ygp.clib._yaml',
     """
     #include <yaml.h>
     """,
