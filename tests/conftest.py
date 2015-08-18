@@ -127,7 +127,7 @@ class SubprocessError(Exception):
 
 class IntegrationTestError(Exception):
     def __init__(self, output_tree, expected_tree):
-        super(UnexpectedSuccessError, self).__init__(
+        super(IntegrationTestError, self).__init__(
             output_tree,
             expected_tree,
         )
