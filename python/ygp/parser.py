@@ -1,7 +1,9 @@
 from __future__ import absolute_import
 from __future__ import print_function
 
+import datetime
 from collections import OrderedDict, Mapping
+import re
 
 
 class YGPError(Exception):
@@ -13,6 +15,41 @@ class YGPValueError(YGPError, ValueError):
 
 
 class YAMLEventHandler(object):
+    DATE = re.compile(
+        r'(?P<year>[0-9][0-9][0-9][0-9])'
+        r'-'
+        r'(?P<month>[0-9][0-9]?)'
+        r'-'
+        r'(?P<day>[0-9][0-9]?)'
+        r'$'
+    )
+    DATETIME = re.compile(
+        r'(?P<year>[0-9][0-9][0-9][0-9])'
+        r'-'
+        r'(?P<month>[0-9][0-9]?)'
+        r'-'
+        r'(?P<day>[0-9][0-9]?)'
+        r'([Tt]|[ \t]+)'
+        r'(?P<hour>[0-9][0-9]?)'
+        r':'
+        r'(?P<minute>[0-9][0-9]?)'
+        r':'
+        r'(?P<second>[0-9][0-9]?)'
+        r'(\.'                      # optional fraction
+        r'(?P<fraction>[0-9]*)'
+        r')?'                       # end optional fraction
+        r'('                        # optional timezone
+        r'([ \t]*)Z'                # choice #1 Z
+        r'|'                        # start choice #2 -/+ offset
+        r'(?P<tz_direction>[-+])'
+        r'(?P<tz_hour>[0-9][0-9]?)'
+        r'('
+        r':'
+        r'(?P<tz_minute>[0-9][0-9])?'
+        r')?'                       # end optional tz_minute
+        r')?'                       # end optional timezone
+        r'$'
+    )
 
     def __init__(self, clib, parser):
         self.clib = clib
@@ -96,13 +133,44 @@ class YAMLEventHandler(object):
                 raise self.build_custom_error(
                     'Octal scalers are not supported {!r}'.format(value)
                 )
-            value = int(value)
-        elif value == 'null':
-            value = None
-        elif value == 'true':
-            value = True
-        elif value == 'false':
-            value = False
+            return int(value)
+        if value == 'null':
+            return None
+        if value == 'true':
+            return True
+        if value == 'false':
+            return False
+
+        date_match = self.DATE.match(value)
+        if date_match:
+            groups = date_match.groupdict()
+            return datetime.date(
+                year=int(groups['year']),
+                month=int(groups['month']),
+                day=int(groups['day']),
+            )
+
+        datetime_match = self.DATETIME.match(value)
+        if datetime_match:
+            groups = datetime_match.groupdict()
+
+            offset = datetime.timedelta(
+                hours=int(groups['tz_hour'] or 0),
+                minutes=int(groups['tz_minute'] or 0),
+            )
+
+            if groups.get('tz_direction', '+') == '+':
+                offset = offset * -1
+
+            return datetime.datetime(
+                year=int(groups['year']),
+                month=int(groups['month']),
+                day=int(groups['day']),
+                hour=int(groups['hour']),
+                minute=int(groups['minute']),
+                second=int(groups['second']),
+                microsecond=int(groups['fraction'] or 0),
+            ) + offset
         return value
 
     def add_anchor(self, anchor, value):

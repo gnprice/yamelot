@@ -1,5 +1,6 @@
 #! /usr/bin/env python
 
+import datetime
 import sys
 import json
 
@@ -7,8 +8,28 @@ from ygp.parser import loads
 from ygp.clib import yaml
 
 
+def default(obj):
+    if isinstance(obj, datetime.datetime):
+        return 'datetime({}, {}, {}, {}, {}, {}, {})'.format(
+            obj.year,
+            obj.month,
+            obj.day,
+            obj.hour,
+            obj.minute,
+            obj.second,
+            obj.microsecond,
+        )
+    elif isinstance(obj, datetime.date):
+        return 'date({}, {}, {})'.format(
+            obj.year,
+            obj.month,
+            obj.day,
+        )
+    raise TypeError
+
+
 def main(s):
-    return json.dumps(loads(s, yaml))
+    return json.dumps(loads(s, yaml), default=default)
 
 
 if __name__ == '__main__':
