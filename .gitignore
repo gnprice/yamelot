@@ -1,2 +1,7 @@
 python/build
 js/bin
+*.o
+*.lo
+*.la
+*.pyc
+*.so
