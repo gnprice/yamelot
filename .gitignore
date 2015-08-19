@@ -1,3 +1,4 @@
+/env
 /python/build
 /js/bin
 *.o
