@@ -141,7 +141,7 @@ class YAMLEventHandler(object):
         self.map_key = None
 
     def convert_scalar(self, value):
-        if value.isdigit() and value[0] == '0':
+        if value.isdigit() and value[0] == '0' and len(value) > 1:
             raise self.build_custom_error(
                 'Octal scalers are not supported {!r}'.format(value)
             )
