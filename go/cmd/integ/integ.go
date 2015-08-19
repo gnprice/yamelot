@@ -31,6 +31,8 @@ func bounce(in io.Reader, out io.Writer) {
 		die(err)
 	}
 
+	value = stringifyMapKeys(value)
+
 	err = json.NewEncoder(out).Encode(value)
 	if err != nil {
 		die(err)
@@ -40,4 +42,22 @@ func bounce(in io.Reader, out io.Writer) {
 func die(err error) {
 	fmt.Fprintf(os.Stderr, "\nFailed: %s\n", err)
 	os.Exit(4)
+}
+
+func stringifyMapKeys(value interface{}) interface{} {
+	switch value := value.(type) {
+	case map[interface{}]interface{}:
+		next := make(map[string]interface{}, len(value))
+		for k, v := range value {
+			next[k.(string)] = stringifyMapKeys(v)
+		}
+		return next
+	case []interface{}:
+		for i := 0; i < len(value); i++ {
+			value[i] = stringifyMapKeys(value[i])
+		}
+		return value
+	default:
+		return value
+	}
 }
