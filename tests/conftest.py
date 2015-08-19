@@ -177,9 +177,8 @@ runners = set()
 
 def pytest_configure(config):
     global runners
-    for p in config.option.file_or_dir:
-        path = py.path.local(p)
-        runners |= set(str(irp) for irp in path.visit('integration_runner*'))
+    path = py.path.local(config.invocation_dir)
+    runners |= set(str(irp) for irp in path.visit('integration_runner*'))
 
 
 def pytest_collect_file(parent, path):
