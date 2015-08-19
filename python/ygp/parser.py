@@ -1,9 +1,10 @@
 from __future__ import absolute_import
 from __future__ import print_function
 
-import datetime
 from collections import OrderedDict, Mapping
+import datetime
 import re
+import string
 
 
 class YGPError(Exception):
@@ -61,6 +62,7 @@ class YAMLEventHandler(object):
         r'0x[0-9a-fA-F][0-9a-fA-F_]*'
         r'$'
     )
+    NUMBER_START = string.digits + '-+'
 
     def __init__(self, clib, parser):
         self.clib = clib
@@ -150,44 +152,48 @@ class YAMLEventHandler(object):
         if value == 'false':
             return False
 
-        base_10 = self.BASE_10.match(value)
-        if base_10:
-            return int(base_10.group(0).replace('_', ''))
+        # This check saves .3 sec on my 3.4MB file
+        if value[0] in self.NUMBER_START:
+            base_10 = self.BASE_10.match(value)
+            if base_10:
+                return int(base_10.group(0).replace('_', ''))
 
-        base_16 = self.BASE_16.match(value)
-        if base_16:
-            return int(base_16.group(0).replace('_', ''), 16)
+            base_16 = self.BASE_16.match(value)
+            if base_16:
+                return int(base_16.group(0).replace('_', ''), 16)
 
-        date_match = self.DATE.match(value)
-        if date_match:
-            groups = date_match.groupdict()
-            return datetime.date(
-                year=int(groups['year']),
-                month=int(groups['month']),
-                day=int(groups['day']),
-            )
+        # This check saves another .3 sec on my 3.4MB file
+        if len(value) > 5 and value[4] == '-':
+            date_match = self.DATE.match(value)
+            if date_match:
+                groups = date_match.groupdict()
+                return datetime.date(
+                    year=int(groups['year']),
+                    month=int(groups['month']),
+                    day=int(groups['day']),
+                )
 
-        datetime_match = self.DATETIME.match(value)
-        if datetime_match:
-            groups = datetime_match.groupdict()
+            datetime_match = self.DATETIME.match(value)
+            if datetime_match:
+                groups = datetime_match.groupdict()
 
-            offset = datetime.timedelta(
-                hours=int(groups['tz_hour'] or 0),
-                minutes=int(groups['tz_minute'] or 0),
-            )
+                offset = datetime.timedelta(
+                    hours=int(groups['tz_hour'] or 0),
+                    minutes=int(groups['tz_minute'] or 0),
+                )
 
-            if groups.get('tz_direction', '+') == '+':
-                offset = offset * -1
+                if groups.get('tz_direction', '+') == '+':
+                    offset = offset * -1
 
-            return datetime.datetime(
-                year=int(groups['year']),
-                month=int(groups['month']),
-                day=int(groups['day']),
-                hour=int(groups['hour']),
-                minute=int(groups['minute']),
-                second=int(groups['second']),
-                microsecond=int(groups['fraction'] or 0),
-            ) + offset
+                return datetime.datetime(
+                    year=int(groups['year']),
+                    month=int(groups['month']),
+                    day=int(groups['day']),
+                    hour=int(groups['hour']),
+                    minute=int(groups['minute']),
+                    second=int(groups['second']),
+                    microsecond=int(groups['fraction'] or 0),
+                ) + offset
         return value
 
     def add_anchor(self, anchor, value):
