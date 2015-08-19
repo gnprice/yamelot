@@ -7,6 +7,7 @@ package main
 
 import (
 	"encoding/json"
+	"io"
 	"io/ioutil"
 	"os"
 
@@ -14,14 +15,23 @@ import (
 )
 
 func main() {
-	input, err := ioutil.ReadAll(os.Stdin)
+	bounce(os.Stdin, os.Stdout)
+}
+
+func bounce(in io.Reader, out io.Writer) {
+	input, err := ioutil.ReadAll(in)
 	if err != nil {
 		panic(err)
 	}
+
 	var value interface{}
 	err = yaml.Unmarshal(input, &value)
 	if err != nil {
 		panic(err)
 	}
-	json.NewEncoder(os.Stdout).Encode(value)
+
+	err = json.NewEncoder(out).Encode(value)
+	if err != nil {
+		panic(err)
+	}
 }
