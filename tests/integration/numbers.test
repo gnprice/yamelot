@@ -1,0 +1,22 @@
+normal: 123
+positive: +123
+negative: -123
+big: 123_123_123
+
+normal_hex: 0x7B
+positive_hex: +0x7B
+negative_hex: -0x7b
+big_hex: 0x7_56B_5B3
+
+================================================================================
+{
+    "normal":123,
+    "positive": 123,
+    "negative": -123,
+    "big": 123123123,
+
+    "normal_hex": 123,
+    "positive_hex": 123,
+    "negative_hex": -123,
+    "big_hex": 123123123
+}

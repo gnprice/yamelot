@@ -50,6 +50,17 @@ class YAMLEventHandler(object):
         r')?'                       # end optional timezone
         r'$'
     )
+    BASE_10 = re.compile(
+        r'[-+]?'
+        r'(0|[1-9][0-9_]*)'
+        r'$'
+    )
+
+    BASE_16 = re.compile(
+        r'[-+]?'
+        r'0x[0-9a-fA-F][0-9a-fA-F_]*'
+        r'$'
+    )
 
     def __init__(self, clib, parser):
         self.clib = clib
@@ -128,18 +139,24 @@ class YAMLEventHandler(object):
         self.map_key = None
 
     def convert_scalar(self, value):
-        if value.isdigit():
-            if value[0] == '0':
-                raise self.build_custom_error(
-                    'Octal scalers are not supported {!r}'.format(value)
-                )
-            return int(value)
+        if value.isdigit() and value[0] == '0':
+            raise self.build_custom_error(
+                'Octal scalers are not supported {!r}'.format(value)
+            )
         if value == 'null':
             return None
         if value == 'true':
             return True
         if value == 'false':
             return False
+
+        base_10 = self.BASE_10.match(value)
+        if base_10:
+            return int(base_10.group(0).replace('_', ''))
+
+        base_16 = self.BASE_16.match(value)
+        if base_16:
+            return int(base_16.group(0).replace('_', ''), 16)
 
         date_match = self.DATE.match(value)
         if date_match:
