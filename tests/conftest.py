@@ -86,7 +86,7 @@ class IntegrationTestItem(pytest.Item):
     def repr_failure(self, excinfo):
         value = excinfo.value
         if isinstance(value, UnexpectedSuccessError):
-            return 'Test should have failed but parsed to\n{}'.format(
+            return 'Expected error, got\n{}'.format(
                 value.parsed_ygp
             )
         if isinstance(value, TestTextParseError):
