@@ -3,8 +3,21 @@
     this.value = value;
   }
 
+  function Comment(value) {
+    this.text = value;
+  }
+
   function Document(node) {
     this.node = node;
+  }
+
+  function repeated(char, times) {
+    var _array = [];
+	var i;
+	for (i = 0; i < times; i++) {
+	  _array.push(char);
+	}
+	return _array;
   }
 }
 
@@ -13,26 +26,11 @@ start
 
 stream
   = node
-  / document+
-
-document
-  = "---" whitespace node:node whitespace ("..."?) { return new Document(node) }
 
 node "node"
-  = value:scalar { return new Node(value) }
-
-// node "node"
-//   = scalar / map / sequence
-//
-// map "map"
-//   = whitespace_map
-//   / inline_map
-// 
-// whitespace_map
-//   = map_key ":" map_value:node (("\n" whitespace_map)?)
-
-whitespace
-  = "\n" / " " / "\t"
+  = empty_line
+  / rest_of_line_maybe_comments
+  / value:scalar { return new Node(value) }
 
 scalar
   = integer
@@ -66,36 +64,82 @@ boolean "boolean"
 null "null"
   = ("null" / "Null" / "NULL") { return null }
 
-bom
-  = "\ufeff"
+directive  // YAML 1.2 [[82]
+  = $( "%YAML" nonbreak* rest_of_line_maybe_comments
+     / "%TAG" nonbreak* rest_of_line_maybe_comments
+     / "%.+" nonbreak* rest_of_line_maybe_comments
+	 )
 
-indicator
-  = [-?:,|{}#&*!|>'"%@`] / "[" / "]"
+/*
+ * Comments
+ */
 
-flow_indicator = [,{}] / "[" / "]"
+rest_of_line_maybe_comments  // YAML 1.2 [79] s-l-comments
+  = (nonbreak_whitespace / empty_rest_of_line)+
+    first:comment
+    rest:empty_or_comment_line*
+    { return new Comment(first + rest.join('')) }
+  / empty_rest_of_line empty_line+ { return undefined }
 
-empty_line = whitespace* line_break
+empty_or_comment_line
+  = empty_line { return '' }
+  / line_start nonbreak_whitespace* value:comment { return value }
+
+comment
+  = "#" nonbreak_whitespace* text:$(nonbreak*) empty_rest_of_line { return text || "" }
+
+/*
+ * Line breaks
+ */
+
+folded_line_break  // YAML 1.2 [73]
+  = line_break empty_lines:empty_line+ { return repeated('\n', empty_lines.length).join("") }
+  / line_break { return " " }
+
+/*
+ * Line and file primitives
+ */
+
+empty_rest_of_line = nonbreak_whitespace* line_break_or_eof
+empty_line = line_start empty_rest_of_line  // YAML 1.2 [70]
+
+line_break_or_eof = line_break / file_end
+line_start = &{ return column() == 1 }
+line_end = &line_break / file_end
+file_start = &{ return offset() == 0 }
+file_end = !.
+
+/*
+ * Character classes
+ */
+
+bom = "\ufeff"
 
 line_break = "\n" / "\r" / "\r\n"
 
-printable
-  = "\t"
-  / "\n"
-  / "\r"
-  / [\u0020-\u007e]
+indicator = [-?:,|{}#&*!|>'"%@`] / "[" / "]"  // YAML 1.2 [22]
 
-nonbreak = "\t" / [\u0020-\u007e]
-nonspace = [\u0021-\u007e] // space is \u0020
-whitespace = " " / "\t"
-reserved = "@" | "`"
+flow_indicator = [,{}] / "[" / "]"  // YAML 1.2 [23]
 
-escaped_char = "\\" (
+printable  // YAML 1.2 [1]
+  = "\t" / "\n" / "\r" / [\u0020-\u007e]
+
+nonbreak = "\t" / [\u0020-\u007e]  // YAML 1.2 [27]
+nonspace = [\u0021-\u007e] // space is \u0020; YAML 1.2 [34]
+nonbreak_whitespace = " " / "\t"  // YAML 1.2 [33]
+reserved = "@" / "`"  // YAML 1.2 [21]
+
+escaped_char =  // YAML 1.2 [62]
+  "\\"
+  (
   / [0abtnvfre"/N_LP]
-  / "\u00x9"  // literal tab
-  / "\u0020"  // literal space
+  / "\t"  // literal tab
+  / " "  // literal space
   / "\\"      // literal backslash
   / "x" hex_digit hex_digit
   / "u" hex_digit hex_digit hex_digit hex_digit
   / "U" hex_digit hex_digit hex_digit hex_digit hex_digit hex_digit hex_digit hex_digit
+  )
 
-hex_digit = [0-9a-fA-F]
+hex_digit = [0-9a-fA-F]  // YAML 1.2 [36]
+word_char = [0-9a-zA-Z] / "-"  // YAML 1.2 [38]
