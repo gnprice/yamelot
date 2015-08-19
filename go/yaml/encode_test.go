@@ -3,14 +3,15 @@ package yaml_test
 import (
 	"fmt"
 	"math"
+	"net"
+	"os"
 	"strconv"
 	"strings"
 	"time"
 
+	"github.com/dropbox/yamelot/go/yaml"
+
 	. "gopkg.in/check.v1"
-	"gopkg.in/yaml.v2"
-	"net"
-	"os"
 )
 
 var marshalIntTest = 123
