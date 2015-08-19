@@ -98,6 +98,9 @@ class IntegrationTestItem(pytest.Item):
             return 'YGP format error: {}\n{}'.format(
                 value.error, value.ygp_input
             )
+        if isinstance(value, SubprocessError):
+            return 'Conversion process exited nonzero!'
+            # note that pytest already kindly catpured/reported stderr for us through a different path.
         elif isinstance(value, IntegrationTestError):
             return IntegrationTestFailureRepr(self.config, value)
         return super(IntegrationTestItem, self).repr_failure(excinfo)
