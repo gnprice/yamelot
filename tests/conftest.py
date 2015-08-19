@@ -26,66 +26,33 @@ class IntegrationTestFile(pytest.File):
 
     def collect(self):
         test_input = self.fspath.read()
+
         should_xfail = test_input.startswith('XFAIL\n')
         if should_xfail:
             _, test_input = test_input.split('\n', 1)
 
         if '!' * 80 in test_input:
             input_ygp, _ = test_input.split('!' * 80, 1)
-            items = [
-                ExpectedFailingTestItem(
-                    name=str(runner),
-                    parent=self,
-                    ygp=input_ygp,
-                    executable=str(runner),
-                )
-                for runner in runners
-            ]
+            expected = None
         else:
-            input_ygp, input_expected = test_input.split('=' * 80)
-            items = [
-                IntegrationTestItem(
-                    name=str(runner),
-                    parent=self,
-                    ygp=input_ygp,
-                    expected=input_expected,
-                    executable=str(runner),
-                )
-                for runner in runners
-            ]
+            input_ygp, expected = test_input.split('=' * 80)
+
+        items = [
+            IntegrationTestItem(
+                name=str(runner),
+                parent=self,
+                ygp=input_ygp,
+                expected=expected,
+                executable=str(runner),
+            )
+            for runner in runners
+        ]
 
         if should_xfail:
             for item in items:
                 item.add_marker(py.test.mark.xfail)
 
         return items
-
-
-class ExpectedFailingTestItem(pytest.Item):
-    def __init__(self, name, parent, ygp, executable):
-        super(ExpectedFailingTestItem, self).__init__(name, parent)
-        self._ygp = ygp
-        self._executable = executable
-        self.obj = lambda: 'a'  # Fake for xfail marks
-
-    def runtest(self):
-        try:
-            output = call_with_input(self._executable, self._ygp)
-        except SubprocessError:
-            pass
-        else:
-            raise UnexpectedSuccessError(output)
-
-    def repr_failure(self, excinfo):
-        value = excinfo.value
-        if isinstance(value, UnexpectedSuccessError):
-            return 'Test should have failed but parsed to\n{}'.format(
-                value.parsed_ygp
-            )
-        return super(ExpectedFailingTestItem, self).repr_failure(excinfo)
-
-    def reportinfo(self):
-        return self.fspath, self.name, '{}:{}'.format(self.fspath, self.name)
 
 
 class IntegrationTestItem(pytest.Item):
@@ -97,19 +64,31 @@ class IntegrationTestItem(pytest.Item):
         self.obj = lambda: 'a'  # Fake for xfail marks
 
     def runtest(self):
-        try:
-            output = call_with_input(self._executable, self._ygp)
-        except subprocess.CalledProcessError as e:
-            raise YGPParseError(self._ygp, e)
+        if self._expected is None:
+            try:
+                output = call_with_input(self._executable, self._ygp)
+            except SubprocessError:
+                pass
+            else:
+                raise UnexpectedSuccessError(output)
+        else:
+            try:
+                output = call_with_input(self._executable, self._ygp)
+            except subprocess.CalledProcessError as e:
+                raise YGPParseError(self._ygp, e)
 
-        output_tree = test_output_to_tree(output)
-        expected_tree = test_output_to_tree(self._expected)
+            output_tree = test_output_to_tree(output)
+            expected_tree = test_output_to_tree(self._expected)
 
-        if output_tree != expected_tree:
-            raise IntegrationTestError(output_tree, expected_tree)
+            if output_tree != expected_tree:
+                raise IntegrationTestError(output_tree, expected_tree)
 
     def repr_failure(self, excinfo):
         value = excinfo.value
+        if isinstance(value, UnexpectedSuccessError):
+            return 'Test should have failed but parsed to\n{}'.format(
+                value.parsed_ygp
+            )
         if isinstance(value, TestTextParseError):
             return 'TestTextParseError format error: {}\n{}'.format(
                 value.error, value.test_text
