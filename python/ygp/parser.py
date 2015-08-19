@@ -151,6 +151,11 @@ class YAMLEventHandler(object):
             return True
         if value == 'false':
             return False
+        if value == '':
+            if self.cur_in == 'map' and self.map_key is not None:
+                return None
+            else:
+                raise self.build_custom_error('Missing value')
 
         # This check saves .3 sec on my 3.4MB file
         if value[0] in self.NUMBER_START:
@@ -249,8 +254,6 @@ class YAMLEventHandler(object):
                     )
 
                 if scalar.style == self.clib.PLAIN_SCALAR_STYLE:
-                    if value == '':
-                        raise self.build_custom_error('Missing value')
                     if value == '~':
                         raise self.build_custom_error(
                             '\'~\' not allowed as an alias to null'
