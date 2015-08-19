@@ -62,7 +62,15 @@ class YAMLEventHandler(object):
         r'0x[0-9a-fA-F][0-9a-fA-F_]*'
         r'$'
     )
-    NUMBER_START = string.digits + '-+'
+    FLOAT = re.compile(
+        r'[-+]?'
+        r'([0-9][0-9_]*)?'
+        r'\.'
+        r'[0-9.]*'
+        r'([eE][-+][0-9]+)?'
+        r'$'
+    )
+    NUMBER_START = string.digits + '-+.'
 
     def __init__(self, clib, parser):
         self.clib = clib
@@ -161,7 +169,7 @@ class YAMLEventHandler(object):
                 raise self.build_custom_error('Missing value')
 
         # This check saves .3 sec on my 3.4MB file
-        if value[0] in self.NUMBER_START:
+        if value[0] in self.NUMBER_START and value != '.':
             base_10 = self.BASE_10.match(value)
             if base_10:
                 return int(base_10.group(0).replace('_', ''))
@@ -169,6 +177,10 @@ class YAMLEventHandler(object):
             base_16 = self.BASE_16.match(value)
             if base_16:
                 return int(base_16.group(0).replace('_', ''), 16)
+
+            float_ = self.FLOAT.match(value)
+            if float_:
+                return float(float_.group(0).replace('_', ''))
 
         # This check saves another .3 sec on my 3.4MB file
         if len(value) > 5 and value[4] == '-':
