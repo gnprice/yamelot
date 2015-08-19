@@ -960,7 +960,8 @@ ygp_parser_fetch_next_token(ygp_parser_t *parser)
 
     if (CHECK(parser->buffer, '?')
             && (parser->flow_level || IS_BLANKZ_AT(parser->buffer, 1)))
-        return ygp_parser_fetch_key(parser);
+        return ygp_parser_set_scanner_error(parser, NULL, parser->mark,
+                "Use of the key indicator '?' is not allowed");
 
     /* Is it the value indicator? */
 

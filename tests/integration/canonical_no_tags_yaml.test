@@ -1,4 +1,3 @@
-XFAIL
 {
   ? "sequence"
   : [ "one", "two" ],
