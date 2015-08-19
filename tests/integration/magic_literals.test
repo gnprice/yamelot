@@ -1,9 +1,35 @@
 test_null: null
+test_NULL: NULL
+
 test_true: true
+test_yes: yes
+test_on: on
+test_TRUE: true
+test_YES: YES
+test_ON: ON
+
 test_false: false
+test_no: no
+test_off: off
+test_FALSE: FALSE
+test_NO: NO
+test_OFF: OFF
 ================================================================================
 {
     "test_null": null,
+    "test_NULL": null,
+
     "test_true": true,
-    "test_false": false
+    "test_yes": true,
+    "test_on": true,
+    "test_TRUE": true,
+    "test_YES": true,
+    "test_ON": true,
+
+    "test_false": false,
+    "test_no": false,
+    "test_off": false,
+    "test_FALSE": false,
+    "test_NO": false,
+    "test_OFF": false
 }

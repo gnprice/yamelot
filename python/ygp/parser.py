@@ -145,12 +145,15 @@ class YAMLEventHandler(object):
             raise self.build_custom_error(
                 'Octal scalers are not supported {!r}'.format(value)
             )
-        if value == 'null':
+
+        lower_value = value.lower()
+        if lower_value == 'null':
             return None
-        if value == 'true':
+        if lower_value in ('true', 'yes', 'on'):
             return True
-        if value == 'false':
+        if lower_value in ('false', 'no', 'off'):
             return False
+
         if value == '':
             if self.cur_in == 'map' and self.map_key is not None:
                 return None
