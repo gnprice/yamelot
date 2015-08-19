@@ -1,0 +1,87 @@
+#!/bin/bash
+#
+# Build helper script.
+#
+# Run with no args, will:
+#  - fmt any source changes
+#  - attempt to compile
+#  - run unit tests
+#  - leave you a binary that plugs into the validation suite
+#
+
+set -euo pipefail
+
+# Project details
+pkg="github.com/dropbox/yamelot/go"
+
+
+
+# Set up gopath.  Autodetect go install if necessary.
+cd "$( dirname "${BASH_SOURCE[0]}" )"
+export GOROOT=${GOROOT:-"$(dirname "$(which go)")/../"}
+export GOPATH="$PWD"/.gopath/
+
+# subcommand arg?
+SUBCOMMAND=${1:-}
+
+# subsection arg?
+SUBSECTION=${2:-"..."}
+SUBSECTION="./$SUBSECTION"
+
+
+
+if [ -z "$SUBCOMMAND" ] ; then
+	(
+		go fmt "$SUBSECTION"
+		go install "$pkg/cmd/integ" && {
+			echo -e "\E[1;32minstall successful.\E[0;m\n"
+		} || {
+			echo -e "\E[1;41minstall failed!\E[0;m"
+			exit 8
+		}
+		go test "$SUBSECTION" && {
+			echo -e "\n\E[1;32mall tests green.\E[0;m"
+		} || {
+			echo -e "\n\E[1;41msome tests failed!\E[0;m"
+			exit 4
+		}
+	)
+else
+	case "$SUBCOMMAND" in
+	-)
+		# passthrough for other commands
+		shift
+		go "$@"
+		;;
+	env)
+		echo "GOROOT=`go env GOROOT`"
+		echo "GOPATH=`go env GOPATH`"
+		;;
+	path)
+		echo "$GOPATH"
+		;;
+	test)
+		set +e ; shift ; shift ; set -e
+		go test -i "$SUBSECTION" "$@" &&
+		go test -v "$SUBSECTION" "$@" && {
+			echo -e "\n\E[1;32mall tests green.\E[0;m"
+		} || {
+			echo -e "\n\E[1;41msome tests failed!\E[0;m"
+			exit 4
+		}
+		;;
+	install)
+		go install "$pkg/cmd/integ"
+		;;
+	fmt)
+		go fmt "$SUBSECTION"
+		;;
+	clean)
+		rm -rf "$GOPATH/bin" "$GOPATH/pkg" "$GOPATH/tmp"
+		;;
+	*)
+		echo "Usage: $0 {test|install|fmt|clean}" 1>&2;
+		exit 1
+	;;
+	esac
+fi
