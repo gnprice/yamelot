@@ -6,9 +6,22 @@
 package main
 
 import (
-	"fmt"
+	"encoding/json"
+	"io/ioutil"
+	"os"
+
+	"github.com/dropbox/yamelot/go/yaml"
 )
 
 func main() {
-	fmt.Printf("{}\n") // nope
+	input, err := ioutil.ReadAll(os.Stdin)
+	if err != nil {
+		panic(err)
+	}
+	var value interface{}
+	err = yaml.Unmarshal(input, &value)
+	if err != nil {
+		panic(err)
+	}
+	json.NewEncoder(os.Stdout).Encode(value)
 }
