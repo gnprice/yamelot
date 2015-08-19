@@ -1,3 +1,4 @@
+import glob
 import json
 import shlex
 import subprocess
@@ -178,7 +179,7 @@ runners = set()
 def pytest_configure(config):
     global runners
     path = py.path.local(config.invocation_dir)
-    runners |= set(str(irp) for irp in path.visit('integration_runner*'))
+    runners |= set(str(irp) for irp in glob.glob('./*/integration_runner.*'))
 
 
 def pytest_collect_file(parent, path):
