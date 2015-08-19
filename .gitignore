@@ -1,5 +1,5 @@
-python/build
-js/bin
+/python/build
+/js/bin
 *.o
 *.lo
 *.la
