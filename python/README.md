@@ -2,21 +2,22 @@
 SETUP
 -----
 
-* Install libffi.  E.g., `sudo apt-get install libffi-dev` if on
-  Debian or Ubuntu.
+* Follow the setup instructions in the root.  In particular create a
+  virtualenv and activate it.
 
 * Install libygp (from ../libygp).
 
-* Use a virtualenv.
+* Install libffi.  E.g., `sudo apt-get install libffi-dev` if on
+  Debian or Ubuntu.
 
 * Run
-```
+
+```sh
 pip install -e .
 python setup.py develop
-pip install pytest
 ```
 
 TESTS
 -----
 
-Run `py.test` in the parent directory (the root of the repo.)
+See README.md in root.
