@@ -138,7 +138,7 @@ class YAMLEventHandler(object):
 
     def set_map(self, value):
         assert self.cur_in == 'map'
-        assert self.map_key
+        assert self.map_key is not None
         if self.map_key == '<<':
             defaults = value
             if isinstance(defaults, Mapping):
@@ -247,7 +247,7 @@ class YAMLEventHandler(object):
             self.cur_obj.append(value)
         elif self.cur_in == 'map' and self.map_key is None:
             self.map_key = value
-        elif self.cur_in == 'map' and self.map_key:
+        elif self.cur_in == 'map' and self.map_key is not None:
             self.set_map(value)
         else:
             # NOOP root object
