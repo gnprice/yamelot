@@ -1,5 +1,10 @@
 DEFAULTS: &DEFAULTS
     color: red
+    width: 15
+
+OTHER_DEFAULTS: &OTHER_DEFAULTS
+    color: blue
+    width: 25
 
 body:
     height: 400
@@ -17,25 +22,43 @@ h1:
 h2:
     <<: *DEFAULTS
 
+merge_twice:
+    "width": 40
+    <<: *DEFAULTS
+    <<: *OTHER_DEFAULTS
+
 ================================================================================
 
 {
     "DEFAULTS": {
-        "color": "red"
+        "color": "red",
+        "width": 15
+    },
+    "OTHER_DEFAULTS": {
+        "color": "blue",
+        "width": 25
     },
     "body": {
         "height": 400,
+        "width": 15,
         "color": "red"
     },
     "body_2": {
         "height": 400,
+        "width": 15,
         "color": "red"
     },
     "h1": {
         "height": 30,
+        "width": 15,
         "color": "green"
     },
     "h2": {
-        "color": "red"
+        "color": "red",
+        "width": 15
+    },
+    "merge_twice": {
+        "width": 40,
+        "color": "blue"
     }
 }
