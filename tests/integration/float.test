@@ -1,0 +1,26 @@
+zero: 0
+
+normal: 1.5
+exponent: .15e+1
+exponent_neg: 15.e-1
+
+neg_normal: -1.5
+neg_exponent: -.15e+1
+neg_exponent_neg: -15.e-1
+
+not_a_float: .
+ip: 192.168.1.1
+================================================================================
+{
+    "zero": 0,
+    "normal": 1.5,
+    "exponent": 1.5,
+    "exponent_neg": 1.5,
+
+    "neg_normal": -1.5,
+    "neg_exponent": -1.5,
+    "neg_exponent_neg": -1.5,
+
+    "not_a_float": ".",
+    "ip": "192.168.1.1"
+}
