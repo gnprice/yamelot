@@ -3,4 +3,4 @@ module Main where
 import Lib
 
 main :: IO ()
-main = someFunc
+main = mapM_ putStrLn $ parseYamelot "[1,11,111]"
