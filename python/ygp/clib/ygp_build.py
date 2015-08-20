@@ -2,14 +2,17 @@
 from cffi import FFI
 ffi = FFI()
 
+C_HEADER_SRC = '#include <ygp.h>'
+C_KEYWORDS = {
+    'libraries': ['ygp'],
+}
 
-ffi.set_source(
-    'ygp.clib._ygp',
-    """
-    #include <ygp.h>
-    """,
-    libraries=['ygp'],
-)
+if hasattr(ffi, 'set_source'):
+    ffi.set_source(
+        'ygp.clib._ygp',
+        C_HEADER_SRC,
+        **C_KEYWORDS
+    )
 
 ffi.cdef("""
 

@@ -1,7 +1,11 @@
 from __future__ import absolute_import
 from __future__ import print_function
 
-from ygp.clib._ygp import ffi, lib
+try:
+    from ygp.clib._ygp import ffi, lib
+except ImportError:
+    from ygp.clib.ygp_build import ffi, C_HEADER_SRC, C_KEYWORDS
+    lib = ffi.verify(C_HEADER_SRC, **C_KEYWORDS)
 
 __all__ = [
     'NULL',
