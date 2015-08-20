@@ -3504,6 +3504,13 @@ ygp_parser_scan_plain_scalar(ygp_parser_t *parser, ygp_token_t *token)
             break;
     }
 
+    if (strcmp(string.start, "~") == 0)
+    {
+        ygp_parser_set_scanner_error(parser, NULL,
+                start_mark, "~  not allowed as an alias to null");
+        goto error;
+    }
+
     /* Create a token. */
 
     SCALAR_TOKEN_INIT(*token, string.start, string.pointer-string.start,

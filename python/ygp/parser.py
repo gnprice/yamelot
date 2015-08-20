@@ -266,12 +266,6 @@ class YAMLEventHandler(object):
                     scalar.length,
                 )[:].decode('utf-8')
 
-                if scalar.style == self.clib.PLAIN_SCALAR_STYLE:
-                    if value == '~':
-                        raise self.build_custom_error(
-                            '\'~\' not allowed as an alias to null'
-                        )
-
                 if scalar.style == self.clib.LITERAL_SCALAR_STYLE:
                     if self.cur_in == 'map' and self.map_key is None:
                         raise self.build_custom_error(
