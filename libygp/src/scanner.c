@@ -665,7 +665,7 @@ static int
 ygp_parser_fetch_tag(ygp_parser_t *parser);
 
 static int
-ygp_parser_fetch_block_scalar(ygp_parser_t *parser, int literal);
+ygp_parser_fetch_block_scalar(ygp_parser_t *parser);
 
 static int
 ygp_parser_fetch_flow_scalar(ygp_parser_t *parser, int single);
@@ -719,8 +719,7 @@ ygp_parser_scan_uri_escapes(ygp_parser_t *parser, int directive,
         ygp_mark_t start_mark, ygp_string_t *string);
 
 static int
-ygp_parser_scan_block_scalar(ygp_parser_t *parser, ygp_token_t *token,
-        int literal);
+ygp_parser_scan_block_scalar(ygp_parser_t *parser, ygp_token_t *token);
 
 static int
 ygp_parser_scan_block_scalar_breaks(ygp_parser_t *parser,
@@ -987,12 +986,13 @@ ygp_parser_fetch_next_token(ygp_parser_t *parser)
     /* Is it a literal scalar? */
 
     if (CHECK(parser->buffer, '|') && !parser->flow_level)
-        return ygp_parser_fetch_block_scalar(parser, 1);
+        return ygp_parser_fetch_block_scalar(parser);
 
     /* Is it a folded scalar? */
 
     if (CHECK(parser->buffer, '>') && !parser->flow_level)
-        return ygp_parser_fetch_block_scalar(parser, 0);
+        return ygp_parser_set_scanner_error(parser, NULL, parser->mark,
+                "'Folded Scalars are not allowed.");
 
     /* Is it a single-quoted scalar? */
 
@@ -1826,7 +1826,7 @@ ygp_parser_fetch_tag(ygp_parser_t *parser)
  */
 
 static int
-ygp_parser_fetch_block_scalar(ygp_parser_t *parser, int literal)
+ygp_parser_fetch_block_scalar(ygp_parser_t *parser)
 {
     ygp_token_t token;
 
@@ -1841,7 +1841,7 @@ ygp_parser_fetch_block_scalar(ygp_parser_t *parser, int literal)
 
     /* Create the SCALAR token and append it to the queue. */
 
-    if (!ygp_parser_scan_block_scalar(parser, &token, literal))
+    if (!ygp_parser_scan_block_scalar(parser, &token))
         return 0;
 
     if (!ENQUEUE(parser, parser->tokens, token)) {
@@ -2732,8 +2732,8 @@ ygp_parser_scan_uri_escapes(ygp_parser_t *parser, int directive,
  */
 
 static int
-ygp_parser_scan_block_scalar(ygp_parser_t *parser, ygp_token_t *token,
-        int literal)
+ygp_parser_scan_block_scalar(ygp_parser_t *parser, ygp_token_t *token)
+
 {
     ygp_mark_t start_mark;
     ygp_mark_t end_mark;
@@ -2850,22 +2850,8 @@ ygp_parser_scan_block_scalar(ygp_parser_t *parser, ygp_token_t *token,
 
         /* Check if we need to fold the leading line break. */
 
-        if (!literal && (*leading_break.start == '\n')
-                && !leading_blank && !trailing_blank)
-        {
-            /* Do we need to join the lines by space? */
-
-            if (*trailing_breaks.start == '\0') {
-                if (!STRING_EXTEND(parser, string)) goto error;
-                *(string.pointer ++) = ' ';
-            }
-
-            CLEAR(parser, leading_break);
-        }
-        else {
-            if (!JOIN(parser, string, leading_break)) goto error;
-            CLEAR(parser, leading_break);
-        }
+        if (!JOIN(parser, string, leading_break)) goto error;
+        CLEAR(parser, leading_break);
 
         /* Append the remaining line breaks. */
 
@@ -2901,7 +2887,7 @@ ygp_parser_scan_block_scalar(ygp_parser_t *parser, ygp_token_t *token,
     /* Create a token. */
 
     SCALAR_TOKEN_INIT(*token, string.start, string.pointer-string.start,
-            literal ? YGP_LITERAL_SCALAR_STYLE : YGP_FOLDED_SCALAR_STYLE,
+            YGP_LITERAL_SCALAR_STYLE,
             start_mark, end_mark);
 
     STRING_DEL(parser, leading_break);

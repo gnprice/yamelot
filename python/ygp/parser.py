@@ -266,13 +266,6 @@ class YAMLEventHandler(object):
                     scalar.length,
                 )[:].decode('utf-8')
 
-                if scalar.style == self.clib.FOLDED_SCALAR_STYLE:
-                    raise self.build_custom_error(
-                        'Folded Scalars are not allowed {!r}'.format(
-                            value
-                        )
-                    )
-
                 if scalar.style == self.clib.PLAIN_SCALAR_STYLE:
                     if value == '~':
                         raise self.build_custom_error(
