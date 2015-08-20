@@ -4,13 +4,7 @@ module Lib
 
 import Text.ParserCombinators.Parsec
 
-flowSequence = do r <- char '[' >> (inner <|> return [])
-                  char ']'
-                  return r
-  where inner = do first <- flowNode
-                   rest <- continued
-                   return $ first:rest
-        continued = (char ',' >> (inner <|> return [])) <|> return []
+flowSequence = between (char '[') (char ']') $ sepEndBy flowNode (char ',')
 
 flowNode = flowScalar
 
