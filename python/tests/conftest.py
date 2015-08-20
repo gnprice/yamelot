@@ -1,3 +1,7 @@
+from __future__ import absolute_import
+from __future__ import print_function
+
+import datetime
 import json
 
 import pytest
@@ -5,9 +9,35 @@ import pytest
 import ygp
 
 
+def default(obj):
+    if isinstance(obj, datetime.datetime):
+        return 'datetime({}, {}, {}, {}, {}, {}, {})'.format(
+            obj.year,
+            obj.month,
+            obj.day,
+            obj.hour,
+            obj.minute,
+            obj.second,
+            obj.microsecond,
+        )
+    elif isinstance(obj, datetime.date):
+        return 'date({}, {}, {})'.format(
+            obj.year,
+            obj.month,
+            obj.day,
+        )
+    raise TypeError
+
+
 class IntergrationTestFile(pytest.File):
     def collect(self):
         test_input = self.fspath.read()
+
+        should_xfail = test_input.startswith('XFAIL\n')
+        if should_xfail:
+            self.add_marker(pytest.mark.xfail)
+            _, test_input = test_input.split('\n', 1)
+
         if '!' * 80 in test_input:
             input_ygp, _ = test_input.split('!' * 80, 1)
             return [ExpectedFailingTestItem(
@@ -29,6 +59,7 @@ class ExpectedFailingTestItem(pytest.Item):
     def __init__(self, name, parent, ygp):
         super(ExpectedFailingTestItem, self).__init__(name, parent)
         self._ygp = ygp
+        self.obj = lambda: 'a'  # Fake for xfail marks
 
     def reportinfo(self):
         return self.fspath, self.name, '{}:{}'.format(self.fspath, self.name)
@@ -55,10 +86,13 @@ class IntergrationTestItem(pytest.Item):
         super(IntergrationTestItem, self).__init__(name, parent)
         self._ygp = ygp
         self._json = json
+        self.obj = lambda: 'a'  # Fake for xfail marks
 
     def runtest(self):
         try:
             parsed_ygp = ygp.loads(self._ygp)
+            json_ygp = json.dumps(parsed_ygp, default=default)
+            normalizd_ygp = json.loads(json_ygp)
         except ValueError as e:
             raise YGPParseError(self._ygp, e)
 
@@ -67,8 +101,8 @@ class IntergrationTestItem(pytest.Item):
         except ValueError as e:
             raise JSONParseError(self._json, e)
 
-        if parsed_ygp != parsed_json:
-            raise IntergrationTestError(parsed_ygp, parsed_json)
+        if normalizd_ygp != parsed_json:
+            raise IntergrationTestError(normalizd_ygp, parsed_json)
 
     def repr_failure(self, excinfo):
         value = excinfo.value
