@@ -11,9 +11,9 @@ data Value = Scalar String | Seq [Value]
 flowSequence = between (char '[') (char ']') $
                  Seq <$> sepEndBy flowNode (char ',')
 
-flowNode = Scalar <$> flowScalar
+flowNode = flowScalar <|> flowSequence
 
-flowScalar = many1 $ alphaNum
+flowScalar = Scalar <$> (many1 $ alphaNum)
 
 parseYamelot :: String -> Either ParseError Value
 parseYamelot input = parse flowSequence "(unknown)" input

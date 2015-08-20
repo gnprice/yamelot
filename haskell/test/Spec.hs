@@ -18,6 +18,7 @@ main :: IO ()
 main = mapM_ check [ ("[1,2a]", Just (Seq [Scalar "1", Scalar "2a"]))
                    , ("[1]", Just (Seq [Scalar "1"]))
                    , ("[]", Just (Seq []))
+                   , ("[1,[]]", Just (Seq [Scalar "1", Seq []]))
                    , ("[,]", Nothing)
                    , ("[1,]", Just (Seq [Scalar "1"]))
                    ]
