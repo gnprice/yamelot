@@ -1,14 +1,19 @@
 module Lib
     ( parseYamelot
+    , Value(..)
     ) where
 
 import Text.ParserCombinators.Parsec
 
-flowSequence = between (char '[') (char ']') $ sepEndBy flowNode (char ',')
+data Value = Scalar String | Seq [Value]
+  deriving (Eq, Show)
 
-flowNode = flowScalar
+flowSequence = between (char '[') (char ']') $
+                 Seq <$> sepEndBy flowNode (char ',')
 
-flowScalar = many1 $ char '1'
+flowNode = Scalar <$> flowScalar
 
-parseYamelot :: String -> Either ParseError [String]
+flowScalar = many1 $ alphaNum
+
+parseYamelot :: String -> Either ParseError Value
 parseYamelot input = parse flowSequence "(unknown)" input

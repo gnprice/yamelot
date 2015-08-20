@@ -4,7 +4,7 @@ import System.Exit
 
 import Lib
 
-check :: (String, Maybe [String]) -> IO ()
+check :: (String, Maybe Value) -> IO ()
 check (input, expected) = case parseYamelot input of
       Right result | expected == Just result -> return ()
       Left _       | expected == Nothing     -> return ()
@@ -15,9 +15,9 @@ check (input, expected) = case parseYamelot input of
             exitFailure
 
 main :: IO ()
-main = mapM_ check [ ("[1,11]", Just ["1","11"])
-                   , ("[1]", Just ["1"])
-                   , ("[]", Just [])
+main = mapM_ check [ ("[1,2a]", Just (Seq [Scalar "1", Scalar "2a"]))
+                   , ("[1]", Just (Seq [Scalar "1"]))
+                   , ("[]", Just (Seq []))
                    , ("[,]", Nothing)
-                   , ("[1,]", Just ["1"])
+                   , ("[1,]", Just (Seq [Scalar "1"]))
                    ]
