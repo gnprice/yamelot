@@ -4,7 +4,7 @@ module Lib
 
 import Text.ParserCombinators.Parsec
 
-flowSequence = do r <- char '[' >> inner
+flowSequence = do r <- char '[' >> (inner <|> return [])
                   char ']'
                   return r
   where inner = do first <- flowNode
@@ -14,7 +14,7 @@ flowSequence = do r <- char '[' >> inner
 
 flowNode = flowScalar
 
-flowScalar = many $ char '1'
+flowScalar = many1 $ char '1'
 
 parseYamelot :: String -> Either ParseError [String]
 parseYamelot input = parse flowSequence "(unknown)" input
