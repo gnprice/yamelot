@@ -29,7 +29,7 @@
     }
     
     if (depth != depths[0]) {
-	  dedents.push("@@BADDENT@@");
+	  dedents.push("@@BADENT@@");
 	}
     
     return dedents;
@@ -42,9 +42,13 @@ start
 	last:line_break?           { return assemble(first, rest, last) }
 
 line
-  = s:$(empty_or_comment_line) { return s }
+  = s:$(nonbreak_whitespace* comment)
+  / s:$(multiline_doublequote_string)
+  / s:$(nonbreak_whitespace*) &line_break
+                               { return s }
   / depth:line_indent
     s:$(nonbreak_nonspace nonbreak*)
 	                           { return depth[0].concat([depth[1] + s]).join("") }
+  / $(nonbreak_whitespace*) !.
 
-line_indent = s:$(" "*)         { return [indent(s), s] }
+line_indent = s:$(" "*)        { return [indent(s), s] }
