@@ -5,6 +5,7 @@ from ygp.clib._yaml import ffi, lib
 
 __all__ = [
     'NULL',
+    'buffer',
     'string',
     'new_event',
     'new_parser',
@@ -34,6 +35,7 @@ PREFIX = 'YAML_'
 
 
 NULL = ffi.NULL
+buffer = ffi.buffer
 string = ffi.string
 
 

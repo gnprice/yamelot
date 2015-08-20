@@ -267,10 +267,10 @@ class YAMLEventHandler(object):
 
                 scalar = event.data.scalar
 
-                value = self.clib.string(
+                value = self.clib.buffer(
                     scalar.value,
                     scalar.length,
-                )
+                )[:].decode('utf-8')
 
                 if scalar.style == self.clib.FOLDED_SCALAR_STYLE:
                     raise self.build_custom_error(
