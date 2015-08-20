@@ -81,7 +81,7 @@ class YAMLEventHandler(object):
         self.cur_obj = None
         self.cur_in = False
         self.map_key = None
-        self.non_merge_leys = None
+        self.non_merge_keys = None
 
         self.last_obj = None
 
@@ -124,7 +124,7 @@ class YAMLEventHandler(object):
             self.cur_obj,
             self.cur_in,
             self.map_key,
-            self.non_merge_leys,
+            self.non_merge_keys,
         ))
 
     def pop_state(self):
@@ -133,7 +133,7 @@ class YAMLEventHandler(object):
             self.cur_obj,
             self.cur_in,
             self.map_key,
-            self.non_merge_leys,
+            self.non_merge_keys,
         ) = self.stack.pop()
 
     def set_map(self, value):
@@ -144,18 +144,18 @@ class YAMLEventHandler(object):
             if isinstance(defaults, Mapping):
                 for key, merge_value in value.items():
                     # PyYAML says last wins
-                    if key not in self.non_merge_leys:
+                    if key not in self.non_merge_keys:
                         self.cur_obj[key] = merge_value
             else:
                 # The list merge spec says "first wins"
-                merged_keys = self.non_merge_leys.copy()
+                merged_keys = self.non_merge_keys.copy()
                 for default in defaults:
                     for key, merge_value in default.items():
                         if key not in merged_keys:
                             merged_keys.add(key)
                             self.cur_obj[key] = merge_value
         else:
-            self.non_merge_leys.add(self.map_key)
+            self.non_merge_keys.add(self.map_key)
             self.cur_obj[self.map_key] = value
         self.map_key = None
 
@@ -333,7 +333,7 @@ class YAMLEventHandler(object):
                 self.push_state()
                 self.cur_obj = new_map
                 self.cur_in = 'map'
-                self.non_merge_leys = set()
+                self.non_merge_keys = set()
 
             elif type_ == self.clib.MAPPING_END_EVENT:
                 self.pop_state()
