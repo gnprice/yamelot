@@ -30,6 +30,7 @@ class IntegrationTestFile(pytest.File):
 
         should_xfail = test_input.startswith('XFAIL\n')
         if should_xfail:
+            self.add_marker(pytest.mark.xfail)
             _, test_input = test_input.split('\n', 1)
 
         if '!' * 80 in test_input:
@@ -48,10 +49,6 @@ class IntegrationTestFile(pytest.File):
             )
             for runner in runners
         ]
-
-        if should_xfail:
-            for item in items:
-                item.add_marker(py.test.mark.xfail)
 
         return items
 
@@ -100,7 +97,8 @@ class IntegrationTestItem(pytest.Item):
             )
         if isinstance(value, SubprocessError):
             return 'Conversion process exited nonzero!'
-            # note that pytest already kindly catpured/reported stderr for us through a different path.
+            # note that pytest already kindly catpured/reported stderr for us
+            # through a different path.
         elif isinstance(value, IntegrationTestError):
             return IntegrationTestFailureRepr(self.config, value)
         return super(IntegrationTestItem, self).repr_failure(excinfo)
