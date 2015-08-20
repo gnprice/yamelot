@@ -349,7 +349,7 @@ class YAMLEventHandler(object):
         return self.last_obj
 
 
-def loads(string, clib):
+def loads(in_str, clib):
     parser = clib.new_parser()
 
     if not clib.parser_initialize(parser):
@@ -357,7 +357,8 @@ def loads(string, clib):
 
     try:
         clib.parser_set_encoding(parser, clib.UTF8_ENCODING)
-        clib.parser_set_input_string(parser, string, len(string))
+        in_str_p = clib.ffi.new('const char[]', in_str)
+        clib.parser_set_input_string(parser, in_str_p, len(in_str))
         event_handler = YAMLEventHandler(clib, parser)
         return event_handler.process()
     finally:
@@ -372,7 +373,8 @@ def load(file_obj, clib):
 
     try:
         clib.parser_set_encoding(parser, clib.UTF8_ENCODING)
-        clib.parser_set_input_file(parser, file_obj)
+        file_obj_p = clib.ffi.new('FILE *', file_obj)
+        clib.parser_set_input_file(parser, file_obj_p)
         event_handler = YAMLEventHandler(clib, parser)
         return event_handler.process()
     finally:
