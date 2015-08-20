@@ -574,21 +574,10 @@ ygp_parser_parse_node(ygp_parser_t *parser, ygp_event_t *event,
         }
         else if (token->type == YGP_TAG_TOKEN)
         {
-            tag_handle = token->data.tag.handle;
-            tag_suffix = token->data.tag.suffix;
-            start_mark = tag_mark = token->start_mark;
-            end_mark = token->end_mark;
-            SKIP_TOKEN(parser);
-            token = PEEK_TOKEN(parser);
-            if (!token) goto error;
-            if (token->type == YGP_ANCHOR_TOKEN)
-            {
-                anchor = token->data.anchor.value;
-                end_mark = token->end_mark;
-                SKIP_TOKEN(parser);
-                token = PEEK_TOKEN(parser);
-                if (!token) goto error;
-            }
+            ygp_parser_set_parser_error_context(parser,
+                "Tags are not allowed", start_mark,
+                token->data.tag.handle, token->start_mark);
+            goto error;
         }
 
         if (tag_handle) {

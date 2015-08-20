@@ -236,12 +236,6 @@ class YAMLEventHandler(object):
                 )
             self.anchors[anchor_value] = value
 
-    def check_tag(self, tag):
-        if tag != self.clib.NULL:
-            raise self.build_custom_error(
-                'Tags are not allowed tag={!r}'.format(self.clib.string(tag))
-            )
-
     def add_item(self, value):
         if self.cur_in == 'seq':
             self.cur_obj.append(value)
@@ -291,8 +285,6 @@ class YAMLEventHandler(object):
                             'Literal scalers are not allowed as keys'
                         )
 
-                self.check_tag(scalar.tag)
-
                 if scalar.style == self.clib.PLAIN_SCALAR_STYLE:
                     value = self.convert_scalar(value)
 
@@ -314,7 +306,6 @@ class YAMLEventHandler(object):
             elif type_ == self.clib.SEQUENCE_START_EVENT:
                 new_seq = []
                 self.add_anchor(event.data.sequence_start.anchor, new_seq)
-                self.check_tag(event.data.sequence_start.tag)
                 self.add_item(new_seq)
 
                 self.push_state()
@@ -327,7 +318,6 @@ class YAMLEventHandler(object):
             elif type_ == self.clib.MAPPING_START_EVENT:
                 new_map = OrderedDict()
                 self.add_anchor(event.data.mapping_start.anchor, new_map)
-                self.check_tag(event.data.mapping_start.tag)
                 self.add_item(new_map)
 
                 self.push_state()
