@@ -816,7 +816,8 @@ ygp_scalar_event_initialize(ygp_event_t *event,
         ygp_char_t *anchor, ygp_char_t *tag,
         ygp_char_t *value, int length,
         int plain_implicit, int quoted_implicit,
-        ygp_scalar_style_t style)
+        ygp_scalar_style_t style
+        )
 {
     ygp_mark_t mark = { 0, 0, 0 };
     ygp_char_t *anchor_copy = NULL;
@@ -849,7 +850,7 @@ ygp_scalar_event_initialize(ygp_event_t *event,
     value_copy[length] = '\0';
 
     SCALAR_EVENT_INIT(*event, anchor_copy, tag_copy, value_copy, length,
-            plain_implicit, quoted_implicit, style, mark, mark);
+            plain_implicit, quoted_implicit, style, YGP_TYPE_OTHER, mark, mark);
 
     return 1;
 

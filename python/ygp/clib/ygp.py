@@ -8,6 +8,7 @@ except ImportError:
     lib = ffi.verify(C_HEADER_SRC, **C_KEYWORDS)
 
 __all__ = [
+    'ffi',
     'NULL',
     'buffer',
     'string',
@@ -32,6 +33,8 @@ __all__ = [
     'MAPPING_START_EVENT',
     'MAPPING_END_EVENT',
     'ALIAS_EVENT',
+    'TYPE_BOOL',
+    'TYPE_NULL',
 ]
 
 prefix = 'ygp_'
@@ -71,3 +74,5 @@ SEQUENCE_END_EVENT = getattr(lib, PREFIX + 'SEQUENCE_END_EVENT')
 MAPPING_START_EVENT = getattr(lib, PREFIX + 'MAPPING_START_EVENT')
 MAPPING_END_EVENT = getattr(lib, PREFIX + 'MAPPING_END_EVENT')
 ALIAS_EVENT = getattr(lib, PREFIX + 'ALIAS_EVENT')
+TYPE_BOOL = getattr(lib, PREFIX + 'TYPE_BOOL')
+TYPE_NULL = getattr(lib, PREFIX + 'TYPE_NULL')

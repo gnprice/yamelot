@@ -53,6 +53,13 @@ typedef enum ygp_event_type_e {
     ...
 } ygp_event_type_t;
 
+typedef enum ygp_scalar_type_e {
+    YGP_TYPE_BOOL,
+    YGP_TYPE_NULL,
+
+    ...
+} ygp_scalar_type_t;
+
 
 typedef unsigned char ygp_char_t;
 
@@ -116,6 +123,7 @@ typedef struct ygp_event_s {
             int plain_implicit;
             int quoted_implicit;
             ygp_scalar_style_t style;
+            ygp_scalar_type_t type;
         } scalar;
 
         struct {

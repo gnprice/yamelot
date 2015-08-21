@@ -629,6 +629,7 @@ ygp_parser_parse_node(ygp_parser_t *parser, ygp_event_t *event,
             if (token->type == YGP_SCALAR_TOKEN) {
                 int plain_implicit = 0;
                 int quoted_implicit = 0;
+                ygp_scalar_style_t type = YGP_TYPE_OTHER;
                 end_mark = token->end_mark;
                 if ((token->data.scalar.style == YGP_PLAIN_SCALAR_STYLE && !tag)
                         || (tag && strcmp((char *)tag, "!") == 0)) {
@@ -638,10 +639,46 @@ ygp_parser_parse_node(ygp_parser_t *parser, ygp_event_t *event,
                     quoted_implicit = 1;
                 }
                 parser->state = POP(parser, parser->states);
+
+                if (token->data.scalar.style == YGP_PLAIN_SCALAR_STYLE) {
+                    if (
+                        (token->data.scalar.length == 4 &&
+                            !strcasecmp(token->data.scalar.value, "true"))
+                        || (token->data.scalar.length == 3 &&
+                            !strcasecmp(token->data.scalar.value, "yes"))
+                        || (token->data.scalar.length == 2 &&
+                            !strcasecmp(token->data.scalar.value, "on"))
+                    ) {
+                        type = YGP_TYPE_BOOL;
+
+                        strcpy(token->data.scalar.value, "1");
+                        token->data.scalar.length = 1;
+                    } else if (
+                        (token->data.scalar.length == 5 &&
+                            !strcasecmp(token->data.scalar.value, "false"))
+                        || (token->data.scalar.length == 2 &&
+                            !strcasecmp(token->data.scalar.value, "no"))
+                        || (token->data.scalar.length == 3 &&
+                            !strcasecmp(token->data.scalar.value, "off"))
+                    ) {
+
+                        type = YGP_TYPE_BOOL;
+
+                        strcpy(token->data.scalar.value, "0");
+                        token->data.scalar.length = 1;
+                    } else if (
+                        token->data.scalar.length == 4 &&
+                        !strcasecmp(token->data.scalar.value, "null")
+                    ) {
+                        type = YGP_TYPE_NULL;
+                    }
+                }
+
+
                 SCALAR_EVENT_INIT(*event, anchor, tag,
                         token->data.scalar.value, token->data.scalar.length,
                         plain_implicit, quoted_implicit,
-                        token->data.scalar.style, start_mark, end_mark);
+                        token->data.scalar.style, type, start_mark, end_mark);
                 SKIP_TOKEN(parser);
                 return 1;
             }
@@ -683,7 +720,7 @@ ygp_parser_parse_node(ygp_parser_t *parser, ygp_event_t *event,
                 parser->state = POP(parser, parser->states);
                 SCALAR_EVENT_INIT(*event, anchor, tag, value, 0,
                         implicit, 0, YGP_PLAIN_SCALAR_STYLE,
-                        start_mark, end_mark);
+                        YGP_TYPE_OTHER, start_mark, end_mark);
                 return 1;
             }
             else {
@@ -1209,7 +1246,7 @@ ygp_parser_process_empty_scalar(ygp_parser_t *parser, ygp_event_t *event,
     value[0] = '\0';
 
     SCALAR_EVENT_INIT(*event, NULL, NULL, value, 0,
-            1, 0, YGP_PLAIN_SCALAR_STYLE, mark, mark);
+            1, 0, YGP_PLAIN_SCALAR_STYLE, YGP_TYPE_OTHER, mark, mark);
 
     return 1;
 }

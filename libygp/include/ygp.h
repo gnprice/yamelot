@@ -153,6 +153,13 @@ typedef struct ygp_mark_s {
     size_t column;
 } ygp_mark_t;
 
+
+typedef enum ygp_scalar_type_e {
+    YGP_TYPE_BOOL,
+    YGP_TYPE_NULL,
+    YGP_TYPE_OTHER
+} ygp_scalar_type_t;
+
 /** @} */
 
 /**
@@ -440,6 +447,7 @@ typedef struct ygp_event_s {
             int quoted_implicit;
             /** The scalar style. */
             ygp_scalar_style_t style;
+            ygp_scalar_type_t type;
         } scalar;
 
         /** The sequence parameters (for @c YGP_SEQUENCE_START_EVENT). */

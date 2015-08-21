@@ -326,7 +326,8 @@ ygp_emitter_dump_scalar(ygp_emitter_t *emitter, ygp_node_t *node,
 
     SCALAR_EVENT_INIT(event, anchor, node->tag, node->data.scalar.value,
             node->data.scalar.length, plain_implicit, quoted_implicit,
-            node->data.scalar.style, mark, mark);
+            node->data.scalar.style,
+            YGP_TYPE_OTHER, mark, mark);
 
     return ygp_emitter_emit(emitter, &event);
 }

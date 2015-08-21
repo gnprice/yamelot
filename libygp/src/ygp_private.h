@@ -572,7 +572,7 @@ ygp_queue_extend(void **start, void **head, void **tail, void **end);
      (event).data.alias.anchor = (event_anchor))
 
 #define SCALAR_EVENT_INIT(event,event_anchor,event_tag,event_value,event_length,    \
-        event_plain_implicit, event_quoted_implicit,event_style,start_mark,end_mark)    \
+        event_plain_implicit, event_quoted_implicit,event_style,event_type,start_mark,end_mark)    \
     (EVENT_INIT((event),YGP_SCALAR_EVENT,(start_mark),(end_mark)),             \
      (event).data.scalar.anchor = (event_anchor),                               \
      (event).data.scalar.tag = (event_tag),                                     \
@@ -580,7 +580,8 @@ ygp_queue_extend(void **start, void **head, void **tail, void **end);
      (event).data.scalar.length = (event_length),                               \
      (event).data.scalar.plain_implicit = (event_plain_implicit),               \
      (event).data.scalar.quoted_implicit = (event_quoted_implicit),             \
-     (event).data.scalar.style = (event_style))
+     (event).data.scalar.style = (event_style),                                 \
+     (event).data.scalar.type = (event_type))
 
 #define SEQUENCE_START_EVENT_INIT(event,event_anchor,event_tag,                 \
         event_implicit,event_style,start_mark,end_mark)                         \

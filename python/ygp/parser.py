@@ -159,19 +159,16 @@ class YAMLEventHandler(object):
             self.cur_obj[self.map_key] = value
         self.map_key = None
 
-    def convert_scalar(self, value):
+    def convert_scalar(self, value, type_):
         if value.isdigit() and value[0] == '0' and len(value) > 1:
             raise self.build_custom_error(
                 'Octal scalers are not supported {!r}'.format(value)
             )
 
-        lower_value = value.lower()
-        if lower_value == 'null':
+        if type_ == self.clib.TYPE_BOOL:
+            return value == '1'
+        elif type_ == self.clib.TYPE_NULL:
             return None
-        if lower_value in ('true', 'yes', 'on'):
-            return True
-        if lower_value in ('false', 'no', 'off'):
-            return False
 
         if value == '':
             if self.cur_in == 'map' and self.map_key is not None:
@@ -261,19 +258,19 @@ class YAMLEventHandler(object):
 
                 scalar = event.data.scalar
 
-                value = self.clib.buffer(
-                    scalar.value,
-                    scalar.length,
-                )[:].decode('utf-8')
-
                 if scalar.style == self.clib.LITERAL_SCALAR_STYLE:
                     if self.cur_in == 'map' and self.map_key is None:
                         raise self.build_custom_error(
                             'Literal scalers are not allowed as keys'
                         )
 
+                value = self.clib.buffer(
+                    scalar.value,
+                    scalar.length,
+                )[:].decode('utf-8')
+
                 if scalar.style == self.clib.PLAIN_SCALAR_STYLE:
-                    value = self.convert_scalar(value)
+                    value = self.convert_scalar(value, scalar.type)
 
                 self.add_anchor(scalar.anchor, value)
                 self.add_item(value)
@@ -350,8 +347,7 @@ def load(file_obj, clib):
 
     try:
         clib.parser_set_encoding(parser, clib.UTF8_ENCODING)
-        file_obj_p = clib.ffi.new('FILE *', file_obj)
-        clib.parser_set_input_file(parser, file_obj_p)
+        clib.parser_set_input_file(parser, file_obj)
         event_handler = YAMLEventHandler(clib, parser)
         return event_handler.process()
     finally:
