@@ -6,36 +6,46 @@ import qualified Debug.Trace
 --trace = Debug.Trace.trace
 trace _ = id
 
+-- | Since this is a scanner-less parser, our tokens are just
+-- characters.
 type Token = Char
+
+-- | An inclusive range between two integers.
 type Range = (Int, Int) -- inclusive
+
+-- | Tests if @i@ in 'Range'.
 inRange :: Int -> Range -> Bool
 inRange i (j, k) = i >= j && i <= k
-inf = 9999999
-type Parse a = [(Token, Int)]
-            -> Range
-            -> Maybe (a, [(Token, Int)], Range)
 
-{-
+-- | Hack to represent an infinite integer (so this will break if
+-- we have any columns greater than this volume).  Proper way to
+-- do this is have a proper data type for integers plus infinity.
+inf :: Int
+inf = 99999999
+
+newtype Parse a =
+    Parse {
+        runParse :: [(Token, Int)]
+                 -> Range
+                 -> Maybe (a, [(Token, Int)], Range) }
+
 instance Functor Parse where
-  fmap ff p cs i = fmap (\(a, cs', i') -> (ff a, cs', i'))
--}
-
-ffmap :: (a -> b) -> Parse a -> Parse b
-ffmap ff = fmap $ fmap $ fmap
-             (\(a, cs', i') -> (ff a, cs', i'))
-
+  fmap ff p = Parse $ \cs i -> fmap (\(a, cs', i') -> (ff a, cs', i')) (runParse p cs i)
 data Value = Scalar String
            | Sequence [Value]
   deriving (Show)
 
 epsilon :: Parse ()
-epsilon cs i = Just ((), cs, i)
+epsilon = Parse $ \cs i -> Just ((), cs, i)
 
 termSatisfy :: (Char -> Bool) -> Parse Char
-termSatisfy _ [] _ = Nothing
-termSatisfy pred ((c,k):cs) i
-    | pred c && k `inRange` i = trace ("term: " ++ show (munge ((c,k):cs), k, i)) $ Just (c, cs, (k, k))
-    | otherwise = trace ("term failed: " ++ show (munge ((c,k):cs), k, i)) $ Nothing
+termSatisfy pred = Parse go
+    where go [] _ = Nothing
+          go ((c,k):cs) i
+            | pred c && k `inRange` i
+            = trace ("term: " ++ show (munge ((c,k):cs), k, i)) $ Just (c, cs, (k, k))
+            | otherwise
+            = trace ("term failed: " ++ show (munge ((c,k):cs), k, i)) $ Nothing
 
 term :: Char -> Parse Char
 term c = termSatisfy (==c)
@@ -53,10 +63,10 @@ afterLock Lock  _     inner = inner
 afterLock Loose outer _     = outer
 
 sqAny :: Lock -> Parse a -> Parse b -> Parse (a,b)
-sqAny l p1 p2 cs i =
-    case p1 cs i of
+sqAny l p1 p2 = Parse $ \cs i ->
+    case runParse p1 cs i of
         Nothing -> Nothing
-        Just (a, cs', i') -> case p2 cs' (followLock l i i') of
+        Just (a, cs', i') -> case runParse p2 cs' (followLock l i i') of
             Nothing -> Nothing
             Just (b, cs'', i'') -> Just ((a,b), cs'', afterLock l i' i'')
 
@@ -64,34 +74,34 @@ sq = sqAny Loose
 sqLock = sqAny Lock
 
 sql :: Parse a -> Parse b -> Parse a
-sql p1 p2 = ffmap fst (p1 `sq` p2)
+sql p1 p2 = fmap fst (p1 `sq` p2)
 
 sqr :: Parse a -> Parse b -> Parse b
-sqr p1 p2 = ffmap snd (p1 `sq` p2)
+sqr p1 p2 = fmap snd (p1 `sq` p2)
 
 between :: Parse a -> Parse c -> Parse b -> Parse b
 between pl pr p = pl `sqr` p `sql` pr
 
 choice :: Parse a -> Parse a -> Parse a
-choice p1 p2 cs i =
-    case p1 cs i of
-        Nothing -> case p2 cs i of
+choice p1 p2 = Parse $ \cs i ->
+    case runParse p1 cs i of
+        Nothing -> case runParse p2 cs i of
             Nothing -> Nothing
             Just (a, cs', i') -> Just (a, cs', i')
         Just (a, cs', i') -> Just (a, cs', i')
 
 option :: Parse a -> Parse (Maybe a)
-option p cs i =
-    case p cs i of
+option p = Parse $ \cs i ->
+    case runParse p cs i of
         Nothing -> Just (Nothing, cs, i)
         Just (a, cs', i') -> Just (Just a, cs', i')
 
 starAny :: Lock -> Parse a -> Parse [a]
-starAny l p cs i =
-    case p cs i of
+starAny l p = Parse $ \cs i ->
+    case runParse p cs i of
         Nothing -> trace ("star empty: " ++ show (munge cs, i)) $ Just ([], cs, i)
         Just (a, cs', i') ->
-            case starAny l p cs' (followLock l i i') of
+            case runParse (starAny l p) cs' (followLock l i i') of
                 Nothing -> Nothing
                 Just (as, cs'', i'') -> trace ("star: " ++ show (munge cs, munge cs'', i'')) $ Just (a:as, cs'', afterLock l i' i'')
 
@@ -102,31 +112,31 @@ starLock = starAny Lock
 data Indent = IGt | IGte
 
 indent :: Indent -> Parse a -> Parse a
-indent ind p cs i =
-    case p cs (fwd ind i) of
+indent ind p = Parse $ \cs i ->
+    case runParse p cs (fwd ind i) of
         Nothing -> Nothing
         Just (a, cs', i') -> Just (a, cs', i `intersect` bwd ind i')
 
 maxInd :: Parse a -> Parse a
-maxInd p cs i =
-    case p cs i of
+maxInd p = Parse $ \cs i ->
+    case runParse p cs i of
         Nothing -> Nothing
         Just (a, cs', (_,ir)) | ir == inf -> Nothing
                               | otherwise -> Just (a, cs', (ir,ir))
 
 intersect (l,h) (l',h') = (max l l', min h h')
 
-plus p cs i = case (p `sq` star p) cs i of
+plus p = Parse $ \cs i -> case runParse (p `sq` star p) cs i of
     Nothing -> Nothing
     Just ((t,ts), cs', i') -> Just (t:ts, cs', i')
 
-plusLock p cs i = case (p `sqLock` starLock p) cs i of
+plusLock p = Parse $ \cs i -> case runParse (p `sqLock` starLock p) cs i of
     Nothing -> Nothing
     Just ((t,ts), cs', i') -> Just (t:ts, cs', i')
 
 sepEndBy :: Parse a -> Parse b -> Parse [b]
 sepEndBy sep elt =
-    ffmap coalesce $ option $
+    fmap coalesce $ option $
         elt `sq` star (sep `sqr` elt) `sql` option sep
   where coalesce Nothing = []
         coalesce (Just (v,vs)) = v:vs
@@ -149,7 +159,7 @@ ann xs = go startIx xs
           go i (x:xs) = (x, i) : go (i+1) xs
 
 run :: String -> Parse a -> Maybe (a, String)
-run cs p = fmap (\(t,xs,_) -> (t,munge xs)) (p (ann cs) (0, inf))
+run cs p = fmap (\(t,xs,_) -> (t,munge xs)) (runParse p (ann cs) (0, inf))
 
 {-
 Possible next hard parts:
@@ -166,15 +176,15 @@ ws = star $ termSatisfy (flip elem " \n")
 eat = (`sql` ws)
 tok = eat . term
 
-flow_scalar = ffmap Scalar $ eat $ maxInd $ plus $ termSatisfy isAlphaNum
-flow_list = ffmap Sequence $ between (tok '[') (tok ']') $
+flow_scalar = fmap Scalar $ eat $ maxInd $ plus $ termSatisfy isAlphaNum
+flow_list = fmap Sequence $ between (tok '[') (tok ']') $
     sepEndBy (tok ',') flow_node
 flow_collection = flow_list
 flow_node = flow_scalar `choice` flow_collection
 
 block_scalar = flow_scalar
-block_list = ffmap Sequence $ plusLock item
-  where item = ffmap snd $ tok '-' `sqLock`
+block_list = fmap Sequence $ plusLock item
+  where item = fmap snd $ tok '-' `sqLock`
                  gt ( block_list
              `choice` block_scalar
              `choice` flow_collection
