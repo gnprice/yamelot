@@ -35,6 +35,7 @@ __all__ = [
     'ALIAS_EVENT',
     'TYPE_BOOL',
     'TYPE_NULL',
+    'TYPE_NUMBERISH',
 ]
 
 prefix = 'ygp_'
@@ -76,3 +77,4 @@ MAPPING_END_EVENT = getattr(lib, PREFIX + 'MAPPING_END_EVENT')
 ALIAS_EVENT = getattr(lib, PREFIX + 'ALIAS_EVENT')
 TYPE_BOOL = getattr(lib, PREFIX + 'TYPE_BOOL')
 TYPE_NULL = getattr(lib, PREFIX + 'TYPE_NULL')
+TYPE_NUMBERISH = getattr(lib, PREFIX + 'TYPE_NUMBERISH')

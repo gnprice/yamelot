@@ -160,24 +160,16 @@ class YAMLEventHandler(object):
         self.map_key = None
 
     def convert_scalar(self, value, type_):
-        if value.isdigit() and value[0] == '0' and len(value) > 1:
-            raise self.build_custom_error(
-                'Octal scalers are not supported {!r}'.format(value)
-            )
-
         if type_ == self.clib.TYPE_BOOL:
             return value == '1'
         elif type_ == self.clib.TYPE_NULL:
             return None
+        elif type_ == self.clib.TYPE_NUMBERISH:
+            if value.isdigit() and value[0] == '0' and len(value) > 1:
+                raise self.build_custom_error(
+                    'Octal scalers are not supported {!r}'.format(value)
+                )
 
-        if value == '':
-            if self.cur_in == 'map' and self.map_key is not None:
-                return None
-            else:
-                raise self.build_custom_error('Missing value')
-
-        # This check saves .3 sec on my 3.4MB file
-        if value[0] in self.NUMBER_START and value != '.':
             base_10 = self.BASE_10.match(value)
             if base_10:
                 return int(base_10.group(0).replace('_', ''))
@@ -189,6 +181,12 @@ class YAMLEventHandler(object):
             float_ = self.FLOAT.match(value)
             if float_:
                 return float(float_.group(0).replace('_', ''))
+
+        if value == '':
+            if self.cur_in == 'map' and self.map_key is not None:
+                return None
+            else:
+                raise self.build_custom_error('Missing value')
 
         # This check saves another .3 sec on my 3.4MB file
         if len(value) > 5 and value[4] == '-':
