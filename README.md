@@ -2,6 +2,19 @@ yamelot
 =======
 
 
+
+Language definition
+-------------------
+
+The tl;dr: Yamelot is a subset (*) of YAML.  Yamelot consists of YAML
+without tags (`!!foo`), and without some obscure and rarely-used
+features (LINK differences).
+
+For a self-contained definition, see (LINK spec).
+
+(*) modulo bugs!  The spec is early and bugs are likely.
+
+
 testing & validation
 --------------------
 
