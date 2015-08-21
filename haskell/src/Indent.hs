@@ -13,29 +13,28 @@ inRange i (j, k) = i >= j && i <= k
 inf = 9999999
 type Parse a = [(Token, Int)]
             -> Range
-            -> () -- absolute alignment -- DEPRECATED
-            -> Maybe (a, [(Token, Int)], Range, ())
+            -> Maybe (a, [(Token, Int)], Range)
 
 {-
 instance Functor Parse where
-  fmap ff p cs i f = fmap (\(a, cs', i', f') -> (ff a, cs', i', f'))
+  fmap ff p cs i = fmap (\(a, cs', i') -> (ff a, cs', i'))
 -}
 
 ffmap :: (a -> b) -> Parse a -> Parse b
-ffmap ff = fmap $ fmap $ fmap $ fmap
-             (\(a, cs', i', f') -> (ff a, cs', i', f'))
+ffmap ff = fmap $ fmap $ fmap
+             (\(a, cs', i') -> (ff a, cs', i'))
 
 data Value = Scalar String
            | Sequence [Value]
   deriving (Show)
 
 epsilon :: Parse ()
-epsilon cs i f = Just ((), cs, i, f)
+epsilon cs i = Just ((), cs, i)
 
 termSatisfy :: (Char -> Bool) -> Parse Char
-termSatisfy _ [] _ _ = Nothing
-termSatisfy pred ((c,k):cs) i f
-    | pred c && k `inRange` i = trace ("term: " ++ show (munge ((c,k):cs), k, i)) $ Just (c, cs, (k, k), ())
+termSatisfy _ [] _ = Nothing
+termSatisfy pred ((c,k):cs) i
+    | pred c && k `inRange` i = trace ("term: " ++ show (munge ((c,k):cs), k, i)) $ Just (c, cs, (k, k))
     | otherwise = trace ("term failed: " ++ show (munge ((c,k):cs), k, i)) $ Nothing
 
 term :: Char -> Parse Char
@@ -44,12 +43,12 @@ term c = termSatisfy (==c)
 munge = map fst
 
 sq :: Parse a -> Parse b -> Parse (a,b)
-sq p1 p2 cs i f =
-    case p1 cs i f of
+sq p1 p2 cs i =
+    case p1 cs i of
         Nothing -> Nothing
-        Just (a, cs', i', f') -> case p2 cs' i' f' of
+        Just (a, cs', i') -> case p2 cs' i' of
             Nothing -> Nothing
-            Just (b, cs'', i'', f'') -> Just ((a,b), cs'', i'', f'')
+            Just (b, cs'', i'') -> Just ((a,b), cs'', i'')
 
 sql :: Parse a -> Parse b -> Parse a
 sql p1 p2 = ffmap fst (p1 `sq` p2)
@@ -58,42 +57,42 @@ sqr :: Parse a -> Parse b -> Parse b
 sqr p1 p2 = ffmap snd (p1 `sq` p2)
 
 choice :: Parse a -> Parse a -> Parse a
-choice p1 p2 cs i f =
-    case p1 cs i f of
-        Nothing -> case p2 cs i f of
+choice p1 p2 cs i =
+    case p1 cs i of
+        Nothing -> case p2 cs i of
             Nothing -> Nothing
-            Just (a, cs', i', f') -> Just (a, cs', i', f')
-        Just (a, cs', i', f') -> Just (a, cs', i', f')
+            Just (a, cs', i') -> Just (a, cs', i')
+        Just (a, cs', i') -> Just (a, cs', i')
 
 star :: Parse a -> Parse [a]
-star p cs i f =
-    case p cs i f of
-        Nothing -> trace ("star empty: " ++ show (munge cs, i)) $ Just ([], cs, i, f)
-        Just (a, cs', i', f') ->
-            case star p cs' i' f' of
+star p cs i =
+    case p cs i of
+        Nothing -> trace ("star empty: " ++ show (munge cs, i)) $ Just ([], cs, i)
+        Just (a, cs', i') ->
+            case star p cs' i' of
                 Nothing -> Nothing
-                Just (as, cs'', i'', f'') -> trace ("star: " ++ show (munge cs, munge cs'', i'')) $ Just (a:as, cs'', i'', f'')
+                Just (as, cs'', i'') -> trace ("star: " ++ show (munge cs, munge cs'', i'')) $ Just (a:as, cs'', i'')
 
 data Indent = IGt | IGte | IEq | IAll
 
 indent :: Indent -> Parse a -> Parse a
-indent ind p cs i _ =
-    case p cs (fwd ind i) () of
+indent ind p cs i =
+    case p cs (fwd ind i) of
         Nothing -> Nothing
-        Just (a, cs', i', f') -> Just (a, cs', i `intersect` bwd ind i', f')
+        Just (a, cs', i') -> Just (a, cs', i `intersect` bwd ind i')
 
 maxInd :: Parse a -> Parse a
-maxInd p cs i f =
-    case p cs i f of
+maxInd p cs i =
+    case p cs i of
         Nothing -> Nothing
-        Just (a, cs', (_,ir), f') | ir == inf -> Nothing
-                                  | otherwise -> Just (a, cs', (ir,ir), f')
+        Just (a, cs', (_,ir)) | ir == inf -> Nothing
+                              | otherwise -> Just (a, cs', (ir,ir))
 
 intersect (l,h) (l',h') = (max l l', min h h')
 
-plus p cs i f = case (p `sq` star p) cs i f of
+plus p cs i = case (p `sq` star p) cs i of
     Nothing -> Nothing
-    Just ((t,ts), cs', i', f') -> Just (t:ts, cs', i', f')
+    Just ((t,ts), cs', i') -> Just (t:ts, cs', i')
 
 gt = indent IGt
 eq = indent IEq
@@ -119,7 +118,7 @@ tok xs = go startIx xs
           go i (x:xs) = (x, i) : go (i+1) xs
 
 run :: String -> Parse a -> Maybe (a, String)
-run cs p = fmap (\(t,xs,_,_) -> (t,munge xs)) (p (tok cs) (0, inf) ())
+run cs p = fmap (\(t,xs,_) -> (t,munge xs)) (p (tok cs) (0, inf))
 
 gterm = gt . term
 
