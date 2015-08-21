@@ -151,6 +151,17 @@ ws = star $ termSatisfy (flip elem " \n")
 sws = (`sql` ws)
 word = maxInd $ plus $ termSatisfy isAlphaNum
 
+{-
+Possible next hard parts:
+* literal scalars
+* literal scalars, with explicit indentation
+* more-complete plain scalars
+
+Easy(??) parts that will cover a bunch more tests:
+* mappings
+* numbers
+-}
+
 list = ffmap Sequence $ plusLock item
 item = ffmap snd $ eat (term '-') `sqLock` gt (other `choice` list)
 other = ffmap Scalar (eat word) `choice` flow_collection
