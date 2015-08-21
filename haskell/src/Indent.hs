@@ -30,8 +30,8 @@ epsilon cs i f = Just (Epsilon, cs, i, f)
 term :: Char -> Parse
 term _ [] _ _ = Nothing
 term a ((c,k):cs) i f
-    | a == c && k `inRange` i = trace ("term: " ++ show (munge ((c,k):cs), k, i)) $ Just (Terminal c, cs, (k, k), False)
-    | otherwise = trace ("term failed: " ++ show (munge ((c,k):cs), k, i)) $ Nothing
+    | a == c && k `inRange` i = trace ("term " ++ show a ++ ": " ++ show (munge ((c,k):cs), k, i)) $ Just (Terminal c, cs, (k, k), False)
+    | otherwise = trace ("term " ++ show a ++ " failed: " ++ show (munge ((c,k):cs), k, i)) $ Nothing
 
 munge = map fst
 
@@ -68,11 +68,10 @@ star p cs i f =
 
 indent :: Indent -> Parse -> Parse
 indent ind p cs i False =
-    trace ("indent: " ++ show (munge cs, i)) $
     case p cs (fwd ind i) False of
         Nothing -> Nothing
-        Just (t, cs', i', f') -> trace ("indent exit: " ++ show (munge cs', i', i `intersect` bwd ind i')) $ Just (t, cs', i `intersect` bwd ind i', f')
-indent ind p cs i True = trace ("indent with pipe: " ++ show (munge cs, i)) $ p cs i True
+        Just (t, cs', i', f') -> Just (t, cs', i `intersect` bwd ind i', f')
+indent ind p cs i True = p cs i True
 
 fixFirst :: Parse -> Parse
 fixFirst p cs i f = p cs i True
@@ -104,8 +103,8 @@ startIx = 0
 tok :: String -> [(Char, Int)]
 tok xs = go startIx xs
     where go _ [] = []
-          go i ('\n':xs) = go startIx xs
-          go i (' ':xs) = go (i+1) xs
+          go i ('\n':xs) = ('\n', i) : go startIx xs
+          go i (' ':xs) = (' ', i) : go (i+1) xs
           go i (x:xs) = (x, i) : go (i+1) xs
 
 run :: String -> Parse -> Maybe (Tree, String)
@@ -120,11 +119,13 @@ gram3 cs i f = trace ("gram3: " ++ show i) $ case
 
 gterm = gt . term
 
-item = eq (term '-') `sq` (other `choice` gt list)
-other = gterm 'a' `choice` flow_collection
+ws = star $ iall $ term ' ' `choice` term '\n'
+
 list = plus (eq item)
+item = eq (term '-') `sq` ws `sq` (other `choice` gt list) `sq` ws
+other = gterm 'a' `choice` flow_collection
 flow_collection = flow_list
-flow_list = gterm '[' `sq` star (gte flow) `sq` gte (gterm ']')
+flow_list = gterm '[' `sq` ws `sq` star (gte flow `sq` ws) `sq` gte (gterm ']')
 flow = term 'b' `choice` flow_collection
 
 yamelot = list
