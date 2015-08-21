@@ -20,10 +20,10 @@ checkParse False = check "parse" (fmap ((>0) . length . snd) . flip run yamelot)
 
 main :: IO ()
 main = do mapM_ (uncurry checkParse) [
-              (True, "- [b]")
+              (True, "- [bb]")
             , (True, "- a")
-            , (False, "- [b]a")
-            , (True, "-\n -\n  -a")
+            , (False, "- [bb]a")
+            , (True, "-\n -\n  -ax")
             , (True, "- [ b   ] ")
-            , (True, "-\n - \n  [ b\n b] ")
+            , (True, "-\n - \n  [ bb\n ac] ")
             ]

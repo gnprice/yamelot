@@ -1,5 +1,6 @@
 module Indent where
 
+import Data.Char
 import qualified Debug.Trace
 
 --trace = Debug.Trace.trace
@@ -12,8 +13,8 @@ inRange i (j, k) = i >= j && i <= k
 inf = 9999999
 type Parse a = [(Token, Int)]
             -> Range
-            -> Bool -- absolute alignment
-            -> Maybe (a, [(Token, Int)], Range, Bool)
+            -> () -- absolute alignment -- DEPRECATED
+            -> Maybe (a, [(Token, Int)], Range, ())
 
 {-
 instance Functor Parse where
@@ -24,18 +25,21 @@ ffmap :: (a -> b) -> Parse a -> Parse b
 ffmap ff = fmap $ fmap $ fmap $ fmap
              (\(a, cs', i', f') -> (ff a, cs', i', f'))
 
-data Value = Scalar Char
+data Value = Scalar String
            | Sequence [Value]
   deriving (Show)
 
 epsilon :: Parse ()
 epsilon cs i f = Just ((), cs, i, f)
 
+termSatisfy :: (Char -> Bool) -> Parse Char
+termSatisfy _ [] _ _ = Nothing
+termSatisfy pred ((c,k):cs) i f
+    | pred c && k `inRange` i = trace ("term: " ++ show (munge ((c,k):cs), k, i)) $ Just (c, cs, (k, k), ())
+    | otherwise = trace ("term failed: " ++ show (munge ((c,k):cs), k, i)) $ Nothing
+
 term :: Char -> Parse Char
-term _ [] _ _ = Nothing
-term a ((c,k):cs) i f
-    | a == c && k `inRange` i = trace ("term " ++ show a ++ ": " ++ show (munge ((c,k):cs), k, i)) $ Just (c, cs, (k, k), False)
-    | otherwise = trace ("term " ++ show a ++ " failed: " ++ show (munge ((c,k):cs), k, i)) $ Nothing
+term c = termSatisfy (==c)
 
 munge = map fst
 
@@ -70,17 +74,20 @@ star p cs i f =
                 Nothing -> Nothing
                 Just (as, cs'', i'', f'') -> trace ("star: " ++ show (munge cs, munge cs'', i'')) $ Just (a:as, cs'', i'', f'')
 
+data Indent = IGt | IGte | IEq | IAll
+
 indent :: Indent -> Parse a -> Parse a
-indent ind p cs i False =
-    case p cs (fwd ind i) False of
+indent ind p cs i _ =
+    case p cs (fwd ind i) () of
         Nothing -> Nothing
         Just (a, cs', i', f') -> Just (a, cs', i `intersect` bwd ind i', f')
-indent ind p cs i True = p cs i True
 
-fixFirst :: Parse a -> Parse a
-fixFirst p cs i f = p cs i True
-
-data Indent = IGt | IGte | IEq | IAll
+maxInd :: Parse a -> Parse a
+maxInd p cs i f =
+    case p cs i f of
+        Nothing -> Nothing
+        Just (a, cs', (_,ir), f') | ir == inf -> Nothing
+                                  | otherwise -> Just (a, cs', (ir,ir), f')
 
 intersect (l,h) (l',h') = (max l l', min h h')
 
@@ -112,17 +119,18 @@ tok xs = go startIx xs
           go i (x:xs) = (x, i) : go (i+1) xs
 
 run :: String -> Parse a -> Maybe (a, String)
-run cs p = fmap (\(t,xs,_,_) -> (t,munge xs)) (p (tok cs) (0, inf) False)
+run cs p = fmap (\(t,xs,_,_) -> (t,munge xs)) (p (tok cs) (0, inf) ())
 
 gterm = gt . term
 
-ws = star $ iall $ term ' ' `choice` term '\n'
+ws = star $ iall $ termSatisfy (flip elem " \n")
+word = maxInd $ plus $ gte $ termSatisfy isAlphaNum
 
 list = ffmap Sequence $ plus (eq item)
 item = eq (term '-') `sqr` ws `sqr` (other `choice` gt list) `sql` ws
-other = ffmap Scalar (gterm 'a') `choice` flow_collection
+other = ffmap Scalar (gt word) `choice` flow_collection
 flow_collection = flow_list
 flow_list = ffmap Sequence $ gterm '[' `sqr` ws `sqr` star (gte flow `sql` ws) `sql` gte (gterm ']')
-flow = ffmap Scalar (term 'b') `choice` flow_collection
+flow = ffmap Scalar word `choice` flow_collection
 
 yamelot = list
