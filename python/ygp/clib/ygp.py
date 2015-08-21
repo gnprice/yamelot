@@ -36,6 +36,7 @@ __all__ = [
     'TYPE_BOOL',
     'TYPE_NULL',
     'TYPE_NUMBERISH',
+    'TYPE_DATEISH',
 ]
 
 prefix = 'ygp_'
@@ -78,3 +79,4 @@ ALIAS_EVENT = getattr(lib, PREFIX + 'ALIAS_EVENT')
 TYPE_BOOL = getattr(lib, PREFIX + 'TYPE_BOOL')
 TYPE_NULL = getattr(lib, PREFIX + 'TYPE_NULL')
 TYPE_NUMBERISH = getattr(lib, PREFIX + 'TYPE_NUMBERISH')
+TYPE_DATEISH = getattr(lib, PREFIX + 'TYPE_DATEISH')

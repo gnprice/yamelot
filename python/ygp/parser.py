@@ -164,32 +164,7 @@ class YAMLEventHandler(object):
             return value == '1'
         elif type_ == self.clib.TYPE_NULL:
             return None
-        elif type_ == self.clib.TYPE_NUMBERISH:
-            if value.isdigit() and value[0] == '0' and len(value) > 1:
-                raise self.build_custom_error(
-                    'Octal scalers are not supported {!r}'.format(value)
-                )
-
-            base_10 = self.BASE_10.match(value)
-            if base_10:
-                return int(base_10.group(0).replace('_', ''))
-
-            base_16 = self.BASE_16.match(value)
-            if base_16:
-                return int(base_16.group(0).replace('_', ''), 16)
-
-            float_ = self.FLOAT.match(value)
-            if float_:
-                return float(float_.group(0).replace('_', ''))
-
-        if value == '':
-            if self.cur_in == 'map' and self.map_key is not None:
-                return None
-            else:
-                raise self.build_custom_error('Missing value')
-
-        # This check saves another .3 sec on my 3.4MB file
-        if len(value) > 5 and value[4] == '-':
+        elif type_ == self.clib.TYPE_DATEISH:
             date_match = self.DATE.match(value)
             if date_match:
                 groups = date_match.groupdict()
@@ -220,6 +195,29 @@ class YAMLEventHandler(object):
                     second=int(groups['second']),
                     microsecond=int(groups['fraction'] or 0),
                 ) + offset
+        elif type_ == self.clib.TYPE_NUMBERISH:
+            if value.isdigit() and value[0] == '0' and len(value) > 1:
+                raise self.build_custom_error(
+                    'Octal scalers are not supported {!r}'.format(value)
+                )
+
+            base_10 = self.BASE_10.match(value)
+            if base_10:
+                return int(base_10.group(0).replace('_', ''))
+
+            base_16 = self.BASE_16.match(value)
+            if base_16:
+                return int(base_16.group(0).replace('_', ''), 16)
+
+            float_ = self.FLOAT.match(value)
+            if float_:
+                return float(float_.group(0).replace('_', ''))
+        elif value == '':
+            if self.cur_in == 'map' and self.map_key is not None:
+                return None
+            else:
+                raise self.build_custom_error('Missing value')
+
         return value
 
     def add_anchor(self, anchor, value):

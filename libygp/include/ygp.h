@@ -158,6 +158,7 @@ typedef enum ygp_scalar_type_e {
     YGP_TYPE_BOOL,
     YGP_TYPE_NULL,
     YGP_TYPE_NUMBERISH,
+    YGP_TYPE_DATEISH,
     YGP_TYPE_OTHER
 } ygp_scalar_type_t;
 

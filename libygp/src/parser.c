@@ -672,6 +672,25 @@ ygp_parser_parse_node(ygp_parser_t *parser, ygp_event_t *event,
                     ) {
                         type = YGP_TYPE_NULL;
                     } else if (
+                        token->data.scalar.length > 5
+                        && token->data.scalar.value[3] != 'e'
+                        && token->data.scalar.value[3] != 'E'
+                        && token->data.scalar.value[4] == '-'
+                        && (
+                            token->data.scalar.value[0] == '1'
+                            || token->data.scalar.value[0] == '2'
+                            || token->data.scalar.value[0] == '3'
+                            || token->data.scalar.value[0] == '4'
+                            || token->data.scalar.value[0] == '5'
+                            || token->data.scalar.value[0] == '6'
+                            || token->data.scalar.value[0] == '7'
+                            || token->data.scalar.value[0] == '8'
+                            || token->data.scalar.value[0] == '9'
+                            || token->data.scalar.value[0] == '0'
+                       )
+                    ) {
+                        type = YGP_TYPE_DATEISH;
+                    } else if (
                         !(token->data.scalar.length == 1 &&
                             token->data.scalar.value[0] == '.')
                         && (
