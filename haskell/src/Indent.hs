@@ -144,13 +144,6 @@ ann xs = go startIx xs
 run :: String -> Parse a -> Maybe (a, String)
 run cs p = fmap (\(t,xs,_) -> (t,munge xs)) (p (ann cs) (0, inf))
 
-eat = sws
-tok = eat . term
-
-ws = star $ termSatisfy (flip elem " \n")
-sws = (`sql` ws)
-word = maxInd $ plus $ termSatisfy isAlphaNum
-
 {-
 Possible next hard parts:
 * literal scalars
@@ -161,6 +154,12 @@ Easy(??) parts that will cover a bunch more tests:
 * mappings
 * numbers
 -}
+
+ws = star $ termSatisfy (flip elem " \n")
+eat = (`sql` ws)
+tok = eat . term
+
+word = maxInd $ plus $ termSatisfy isAlphaNum
 
 list = ffmap Sequence $ plusLock item
 item = ffmap snd $ eat (term '-') `sqLock` gt (other `choice` list)
