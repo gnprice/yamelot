@@ -2,6 +2,8 @@ module Indent where
 
 import Data.Char
 import qualified Debug.Trace
+import Control.Applicative
+import Control.Monad
 
 --trace = Debug.Trace.trace
 trace _ = id
@@ -28,6 +30,25 @@ newtype Parse a =
         runParse :: [(Token, Int)]
                  -> Range
                  -> Maybe (a, [(Token, Int)], Range) }
+
+instance Monad Parse where
+    return x = Parse $ \cs i -> Just (x, cs, i)
+    m >>= f = Parse $ \cs i ->
+        -- TODO: better to factor this out so we can do both loose and
+        -- lock
+        case runParse m cs i of
+            Nothing -> Nothing
+            Just (a, cs', i') -> case runParse (f a) cs' (followLock Loose i i') of
+                Nothing -> Nothing
+                Just (b, cs'', i'') -> Just (b, cs'', afterLock Loose i' i'')
+
+instance Applicative Parse where
+    pure = return
+    (<*>) = ap
+
+instance Alternative Parse where
+    empty = Parse $ \_ _ -> Nothing
+    p1 <|> p2 = choice p1 p2
 
 instance Functor Parse where
   fmap ff p = Parse $ \cs i -> fmap (\(a, cs', i') -> (ff a, cs', i')) (runParse p cs i)
