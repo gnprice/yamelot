@@ -1,6 +1,7 @@
 module Indent where
 
 import Data.Char
+import Data.List (intercalate)
 import qualified Debug.Trace
 
 --trace = Debug.Trace.trace
@@ -39,6 +40,9 @@ termSatisfy pred ((c,k):cs) i
 
 term :: Char -> Parse Char
 term c = termSatisfy (==c)
+
+anyTerm :: Parse Char
+anyTerm = termSatisfy (\c -> True)
 
 munge = map fst
 
@@ -172,12 +176,16 @@ flow_list = ffmap Sequence $ between (tok '[') (tok ']') $
 flow_collection = flow_list
 flow_node = flow_scalar `choice` flow_collection
 
-block_scalar = flow_scalar
+block_scalar = literal_scalar `choice` flow_scalar
 block_list = ffmap Sequence $ plusLock item
   where item = ffmap snd $ tok '-' `sqLock`
                  gt ( block_list
              `choice` block_scalar
              `choice` flow_collection
                     )
+
+literal_scalar = ffmap Scalar $ ((eat $ tok '|') `sqr` lines)
+  where lines = ffmap (intercalate "\n") $ plusLock line
+                where line = plus $ termSatisfy (\c -> c /= '\n')
 
 yamelot = block_list
