@@ -2,8 +2,8 @@ module Indent where
 
 import qualified Debug.Trace
 
-trace = Debug.Trace.trace
---trace _ = id
+--trace = Debug.Trace.trace
+trace _ = id
 
 type Token = Char
 type Range = (Int, Int) -- inclusive
@@ -126,3 +126,5 @@ list = plus (eq item)
 flow_collection = flow_list
 flow_list = gterm '[' `sq` star (gte flow) `sq` gte (gterm ']')
 flow = term 'b' `choice` flow_collection
+
+yamelot = list

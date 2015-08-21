@@ -1,6 +1,6 @@
 module Main where
 
-import Lib
+import Indent
 
 main :: IO ()
 main = putStrLn $ show $ parseYamelot "[1,11,111]"
