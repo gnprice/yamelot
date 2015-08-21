@@ -209,7 +209,8 @@ eatLines = (`sql` wsLines)
 tokLines = eatLines . term
 
 stripIndent :: Parse a -> Parse a
-stripIndent p = Parse $ \cs i -> runParse (timesAny Loose (fst i) (iall $ term ' ') `sqr` p) cs i
+stripIndent p = Parse $ \cs i ->
+  runParse (timesAny Loose (fst i) (iall $ term ' ') `sqr` p) cs i
 
 flow_scalar = fmap Scalar $ eat $ maxInd $ plus $ termSatisfy isAlphaNum
 flow_list = fmap Sequence $ between (tok '[') (tok ']') $
@@ -224,8 +225,9 @@ traceParse msg p = Parse $ \cs i ->
     r@(Just (a, cs', i')) -> trace (header ++ show a) $ r
 
 -- TODO these aren't quite right -- they're like forced-indentation-zero.
-literal_scalar = traceParse "literal" $ fmap join $ (gte $ tokLines '|') `sqLock` plusLock line
-  where line = traceParse "line" $ stripIndent $ traceParse "innerline" $ plus $ termSatisfy (/='\n')
+literal_scalar = traceParse "literal" $ fmap join $
+    (gte $ tokLines '|') `sqLock` plusLock line
+  where line = traceParse "line" $ stripIndent $ plus $ termSatisfy (/='\n')
         join (_, lines) = Scalar $ concat lines
 block_scalar = flow_scalar `choice` literal_scalar
 block_list = fmap Sequence $ plusLock item
