@@ -27,4 +27,6 @@ main = do mapM_ (uncurry checkParse) [
             , (True, "- [ b   ] ")
             , (True, "-\n - \n  [ bb,\n ac] ")
             , (True, "-\n  -\n    [bbbb, cc ,\n  aa,]")
+            , (True, "-\n  -\n    [bbbb, cc ,\n  aa,]")
+            , (True, "-\n -\n  [1,\n2]")
             ]

@@ -45,8 +45,8 @@ munge = map fst
 data Lock = Lock | Loose
 
 followLock :: Lock -> Range -> Range -> Range
-followLock Lock  _     inner = inner
-followLock Loose outer _     = outer
+followLock Lock  _ inner = inner
+followLock Loose _ _     = (0, inf)
 
 afterLock :: Lock -> Range -> Range -> Range
 afterLock Lock  _     inner = inner
@@ -99,7 +99,7 @@ star = starAny Loose
 starLock = starAny Lock
 
 
-data Indent = IGt | IGte | IEq | IAll
+data Indent = IGt | IGte
 
 indent :: Indent -> Parse a -> Parse a
 indent ind p cs i =
@@ -125,19 +125,13 @@ plusLock p cs i = case (p `sqLock` starLock p) cs i of
     Just ((t,ts), cs', i') -> Just (t:ts, cs', i')
 
 gt = indent IGt
-eq = indent IEq
-iall = indent IAll
 gte = indent IGte
 
 fwd IGt (l,h) = (l+1,inf)
 fwd IGte (l,h) = (l,inf)
-fwd IEq (l,h) = (l,h)
-fwd IAll (l,h) = (0,inf)
 
 bwd IGt (l,h) = (0,h-1)
 bwd IGte (l,h) = (0,h)
-bwd IEq (l,h) = (l,h)
-bwd IAll (l,h) = (0,inf)
 
 startIx = 0
 ann :: String -> [(Char, Int)]
@@ -153,15 +147,15 @@ run cs p = fmap (\(t,xs,_) -> (t,munge xs)) (p (ann cs) (0, inf))
 eat = sws
 tok = eat . term
 
-ws = star $ iall $ termSatisfy (flip elem " \n")
+ws = star $ termSatisfy (flip elem " \n")
 sws = (`sql` ws)
 word = maxInd $ plus $ termSatisfy isAlphaNum
 
-list = ffmap Sequence $ plusLock (eq item)
-item = ffmap snd $ sws (eq (term '-')) `sqLock` (other `choice` gt list)
-other = ffmap Scalar (gt $ eat word) `choice` flow_collection
+list = ffmap Sequence $ plusLock item
+item = ffmap snd $ eat (term '-') `sqLock` gt (other `choice` list)
+other = ffmap Scalar (eat word) `choice` flow_collection
 flow_collection = flow_list
-flow_list = ffmap Sequence $ gte $ between (gt $ tok '[') (tok ']') $
+flow_list = ffmap Sequence $ between (tok '[') (tok ']') $
     ffmap coalesce $ option $
         (eat flow)
             `sq` star ((tok ',') `sqr` (eat flow))
