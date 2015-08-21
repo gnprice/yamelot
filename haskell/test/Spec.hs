@@ -15,18 +15,22 @@ check msg f expected input = case f input of
 
 checkParse :: Bool -> String -> IO ()
 checkParse True = check "parse" (fmap snd . flip run yamelot) (Just "")
-checkParse False = check "parse" (fmap ((>0) . length . snd) . flip run yamelot) (Just True)
-
+checkParse False = check "parse" (checkFail . flip run yamelot) True
+  where checkFail Nothing = True
+        checkFail (Just r) = length (snd r) > 0
 
 main :: IO ()
 main = do mapM_ (uncurry checkParse) [
-              (True, "- [bb]")
-            , (True, "- a")
+              (True,  "- [bb]")
+            , (True,  "- a")
             , (False, "- [bb]a")
-            , (True, "-\n -\n  -ax")
-            , (True, "- [ b   ] ")
-            , (True, "-\n - \n  [ bb,\n ac] ")
-            , (True, "-\n  -\n    [bbbb, cc ,\n  aa,]")
-            , (True, "-\n  -\n    [bbbb, cc ,\n  aa,]")
-            , (True, "-\n -\n  [1,\n2]")
+            , (True,  "-\n -\n  -ax")
+            , (True,  "- [ b   ] ")
+            , (True,  "-\n - \n  [ bb,\n ac] ")
+            , (True,  "-\n  -\n    [bbbb, cc ,\n  aa,]")
+            , (True,  "-\n  -\n    [bbbb, cc ,\n  aa,]")
+            , (True,  "-\n -\n  [1,\n2]")
+            , (False, "-\n -\n       |\n ab")
+            , (True,  "-\n -\n       |\n  ab")
+            , (True,  "-\n -\n       |\n   ab")
             ]

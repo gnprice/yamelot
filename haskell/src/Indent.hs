@@ -73,15 +73,17 @@ term c = termSatisfy (==c)
 
 munge = map fst
 
-data Lock = Lock | Loose
+data Lock = Lock | Loose | Band
 
 followLock :: Lock -> Range -> Range -> Range
 followLock Lock  _ inner = inner
 followLock Loose _ _     = (0, inf)
+followLock Band  outer _ = outer
 
 afterLock :: Lock -> Range -> Range -> Range
 afterLock Lock  _     inner = inner
 afterLock Loose outer _     = outer
+afterLock Band  outer _     = outer
 
 sqAny :: Lock -> Parse a -> Parse b -> Parse (a,b)
 sqAny l p1 p2 = Parse $ \cs i ->
@@ -129,8 +131,11 @@ starAny l p = Parse $ \cs i ->
 star = starAny Loose
 starLock = starAny Lock
 
+timesAny :: Lock -> Int -> Parse a -> Parse [a]
+timesAny l 0 p = fmap (const []) epsilon
+timesAny l n p = fmap (uncurry (:)) $ sqAny l p $ timesAny l (n-1) p
 
-data Indent = IGt | IGte
+data Indent = IGt | IGte | IAll
 
 indent :: Indent -> Parse a -> Parse a
 indent ind p = Parse $ \cs i ->
@@ -164,12 +169,15 @@ sepEndBy sep elt =
 
 gt = indent IGt
 gte = indent IGte
+iall = indent IAll
 
 fwd IGt (l,h) = (l+1,inf)
 fwd IGte (l,h) = (l,inf)
+fwd IAll (l,h) = (0,inf)
 
 bwd IGt (l,h) = (0,h-1)
 bwd IGte (l,h) = (0,h)
+bwd IAll (l,h) = (0,inf)
 
 startIx = 0
 ann :: String -> [(Char, Int)]
@@ -196,6 +204,12 @@ Easy(??) parts that will cover a bunch more tests:
 ws = star $ termSatisfy (flip elem " \n")
 eat = (`sql` ws)
 tok = eat . term
+wsLines = star $ star (term ' ') `sq` term '\n'
+eatLines = (`sql` wsLines)
+tokLines = eatLines . term
+
+stripIndent :: Parse a -> Parse a
+stripIndent p = Parse $ \cs i -> runParse (timesAny Loose (fst i) (iall $ term ' ') `sqr` p) cs i
 
 flow_scalar = fmap Scalar $ eat $ maxInd $ plus $ termSatisfy isAlphaNum
 flow_list = fmap Sequence $ between (tok '[') (tok ']') $
@@ -203,7 +217,17 @@ flow_list = fmap Sequence $ between (tok '[') (tok ']') $
 flow_collection = flow_list
 flow_node = flow_scalar `choice` flow_collection
 
-block_scalar = flow_scalar
+traceParse msg p = Parse $ \cs i ->
+  let header = msg ++ " " ++ show i ++ ": " in
+  case runParse p cs i of
+    Nothing -> trace (header ++ "fail") $ Nothing
+    r@(Just (a, cs', i')) -> trace (header ++ show a) $ r
+
+-- TODO these aren't quite right -- they're like forced-indentation-zero.
+literal_scalar = traceParse "literal" $ fmap join $ (gte $ tokLines '|') `sqLock` plusLock line
+  where line = traceParse "line" $ stripIndent $ traceParse "innerline" $ plus $ termSatisfy (/='\n')
+        join (_, lines) = Scalar $ concat lines
+block_scalar = flow_scalar `choice` literal_scalar
 block_list = fmap Sequence $ plusLock item
   where item = fmap snd $ tok '-' `sqLock`
                  gt ( block_list
