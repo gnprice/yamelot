@@ -1,1 +1,3 @@
-dist/build/yamelot-exe/yamelot-exe
+#!/bin/sh
+cd "$(dirname "$(readlink -f "$0")")"
+stack exec yamelot-exe
