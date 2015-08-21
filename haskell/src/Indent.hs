@@ -56,6 +56,9 @@ sql p1 p2 = ffmap fst (p1 `sq` p2)
 sqr :: Parse a -> Parse b -> Parse b
 sqr p1 p2 = ffmap snd (p1 `sq` p2)
 
+between :: Parse a -> Parse c -> Parse b -> Parse b
+between pl pr p = pl `sqr` p `sql` pr
+
 choice :: Parse a -> Parse a -> Parse a
 choice p1 p2 cs i =
     case p1 cs i of
@@ -63,6 +66,12 @@ choice p1 p2 cs i =
             Nothing -> Nothing
             Just (a, cs', i') -> Just (a, cs', i')
         Just (a, cs', i') -> Just (a, cs', i')
+
+option :: Parse a -> Parse (Maybe a)
+option p cs i =
+    case p cs i of
+        Nothing -> Just (Nothing, cs, i)
+        Just (a, cs', i') -> Just (Just a, cs', i')
 
 star :: Parse a -> Parse [a]
 star p cs i =
@@ -121,15 +130,23 @@ run :: String -> Parse a -> Maybe (a, String)
 run cs p = fmap (\(t,xs,_) -> (t,munge xs)) (p (tok cs) (0, inf))
 
 gterm = gt . term
+geterm = gte . term
 
 ws = star $ iall $ termSatisfy (flip elem " \n")
+sws = (`sql` ws)
 word = maxInd $ plus $ gte $ termSatisfy isAlphaNum
 
 list = ffmap Sequence $ plus (eq item)
 item = eq (term '-') `sqr` ws `sqr` (other `choice` gt list) `sql` ws
 other = ffmap Scalar (gt word) `choice` flow_collection
 flow_collection = flow_list
-flow_list = ffmap Sequence $ gterm '[' `sqr` ws `sqr` star (gte flow `sql` ws) `sql` gte (gterm ']')
+flow_list = ffmap Sequence $ between (gterm '[' `sq` ws) (geterm ']') $
+    ffmap coalesce $ option $
+        (sws $ gte flow)
+            `sq` star ((sws $ geterm ',') `sqr` (sws $ gte flow))
+            `sql` option (sws $ geterm ',')
+  where coalesce Nothing = []
+        coalesce (Just (v,vs)) = v:vs
 flow = ffmap Scalar word `choice` flow_collection
 
 yamelot = list
