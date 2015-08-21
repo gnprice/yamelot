@@ -4,8 +4,8 @@ import Data.Char
 import Data.List (intercalate)
 import qualified Debug.Trace
 
---trace = Debug.Trace.trace
-trace _ = id
+trace = Debug.Trace.trace
+--trace _ = id
 
 type Token = Char
 type Range = (Int, Int) -- inclusive
@@ -117,6 +117,12 @@ maxInd p cs i =
         Nothing -> Nothing
         Just (a, cs', (_,ir)) | ir == inf -> Nothing
                               | otherwise -> Just (a, cs', (ir,ir))
+leftInd :: Parse a -> Parse a
+leftInd p cs i =
+    case p cs i of
+        Nothing -> Nothing
+        Just (a, cs', (il,_)) -> Just (a, cs', (0, il))
+
 
 intersect (l,h) (l',h') = (max l l', min h h')
 
@@ -170,6 +176,8 @@ ws = star $ termSatisfy (flip elem " \n")
 eat = (`sql` ws)
 tok = eat . term
 
+eatToInd = (`sql` (trace "eating to ind" $ leftInd ws))
+
 flow_scalar = ffmap Scalar $ eat $ maxInd $ plus $ termSatisfy isAlphaNum
 flow_list = ffmap Sequence $ between (tok '[') (tok ']') $
     sepEndBy (tok ',') flow_node
@@ -185,7 +193,7 @@ block_list = ffmap Sequence $ plusLock item
                     )
 
 literal_scalar = ffmap Scalar $ ((eat $ tok '|') `sqr` lines)
-  where lines = ffmap (intercalate "\n") $ plusLock line
+  where lines = ffmap (intercalate "\n") $ plusLock $ eat line
                 where line = plus $ termSatisfy (\c -> c /= '\n')
 
 yamelot = block_list
