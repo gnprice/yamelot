@@ -42,13 +42,26 @@ term c = termSatisfy (==c)
 
 munge = map fst
 
-sq :: Parse a -> Parse b -> Parse (a,b)
-sq p1 p2 cs i =
+data Lock = Lock | Loose
+
+followLock :: Lock -> Range -> Range -> Range
+followLock Lock  _     inner = inner
+followLock Loose outer _     = outer
+
+afterLock :: Lock -> Range -> Range -> Range
+afterLock Lock  _     inner = inner
+afterLock Loose outer _     = outer
+
+sqAny :: Lock -> Parse a -> Parse b -> Parse (a,b)
+sqAny l p1 p2 cs i =
     case p1 cs i of
         Nothing -> Nothing
-        Just (a, cs', i') -> case p2 cs' i' of
+        Just (a, cs', i') -> case p2 cs' (followLock l i i') of
             Nothing -> Nothing
-            Just (b, cs'', i'') -> Just ((a,b), cs'', i'')
+            Just (b, cs'', i'') -> Just ((a,b), cs'', afterLock l i' i'')
+
+sq = sqAny Loose
+sqLock = sqAny Lock
 
 sql :: Parse a -> Parse b -> Parse a
 sql p1 p2 = ffmap fst (p1 `sq` p2)
@@ -73,14 +86,18 @@ option p cs i =
         Nothing -> Just (Nothing, cs, i)
         Just (a, cs', i') -> Just (Just a, cs', i')
 
-star :: Parse a -> Parse [a]
-star p cs i =
+starAny :: Lock -> Parse a -> Parse [a]
+starAny l p cs i =
     case p cs i of
         Nothing -> trace ("star empty: " ++ show (munge cs, i)) $ Just ([], cs, i)
         Just (a, cs', i') ->
-            case star p cs' i' of
+            case starAny l p cs' (followLock l i i') of
                 Nothing -> Nothing
-                Just (as, cs'', i'') -> trace ("star: " ++ show (munge cs, munge cs'', i'')) $ Just (a:as, cs'', i'')
+                Just (as, cs'', i'') -> trace ("star: " ++ show (munge cs, munge cs'', i'')) $ Just (a:as, cs'', afterLock l i' i'')
+
+star = starAny Loose
+starLock = starAny Lock
+
 
 data Indent = IGt | IGte | IEq | IAll
 
@@ -100,6 +117,10 @@ maxInd p cs i =
 intersect (l,h) (l',h') = (max l l', min h h')
 
 plus p cs i = case (p `sq` star p) cs i of
+    Nothing -> Nothing
+    Just ((t,ts), cs', i') -> Just (t:ts, cs', i')
+
+plusLock p cs i = case (p `sqLock` starLock p) cs i of
     Nothing -> Nothing
     Just ((t,ts), cs', i') -> Just (t:ts, cs', i')
 
@@ -129,18 +150,18 @@ ann xs = go startIx xs
 run :: String -> Parse a -> Maybe (a, String)
 run cs p = fmap (\(t,xs,_) -> (t,munge xs)) (p (ann cs) (0, inf))
 
-eat = sws . gte
+eat = sws
 tok = eat . term
 
 ws = star $ iall $ termSatisfy (flip elem " \n")
 sws = (`sql` ws)
-word = maxInd $ plus $ gte $ termSatisfy isAlphaNum
+word = maxInd $ plus $ termSatisfy isAlphaNum
 
-list = ffmap Sequence $ plus (eq item)
-item = sws (eq (term '-')) `sqr` (other `choice` gt list)
+list = ffmap Sequence $ plusLock (eq item)
+item = ffmap snd $ sws (eq (term '-')) `sqLock` (other `choice` gt list)
 other = ffmap Scalar (gt $ eat word) `choice` flow_collection
 flow_collection = flow_list
-flow_list = ffmap Sequence $ between (gt $ tok '[') (tok ']') $
+flow_list = ffmap Sequence $ gte $ between (gt $ tok '[') (tok ']') $
     ffmap coalesce $ option $
         (eat flow)
             `sq` star ((tok ',') `sqr` (eat flow))
