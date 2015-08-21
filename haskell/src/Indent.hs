@@ -119,32 +119,32 @@ bwd IEq (l,h) = (l,h)
 bwd IAll (l,h) = (0,inf)
 
 startIx = 0
-tok :: String -> [(Char, Int)]
-tok xs = go startIx xs
+ann :: String -> [(Char, Int)]
+ann xs = go startIx xs
     where go _ [] = []
           go i ('\n':xs) = ('\n', i) : go startIx xs
           go i (' ':xs) = (' ', i) : go (i+1) xs
           go i (x:xs) = (x, i) : go (i+1) xs
 
 run :: String -> Parse a -> Maybe (a, String)
-run cs p = fmap (\(t,xs,_) -> (t,munge xs)) (p (tok cs) (0, inf))
+run cs p = fmap (\(t,xs,_) -> (t,munge xs)) (p (ann cs) (0, inf))
 
-gterm = gt . term
-geterm = gte . term
+eat = sws . gte
+tok = eat . term
 
 ws = star $ iall $ termSatisfy (flip elem " \n")
 sws = (`sql` ws)
 word = maxInd $ plus $ gte $ termSatisfy isAlphaNum
 
 list = ffmap Sequence $ plus (eq item)
-item = eq (term '-') `sqr` ws `sqr` (other `choice` gt list) `sql` ws
-other = ffmap Scalar (gt word) `choice` flow_collection
+item = sws (eq (term '-')) `sqr` (other `choice` gt list)
+other = ffmap Scalar (gt $ eat word) `choice` flow_collection
 flow_collection = flow_list
-flow_list = ffmap Sequence $ between (gterm '[' `sq` ws) (geterm ']') $
+flow_list = ffmap Sequence $ between (gt $ tok '[') (tok ']') $
     ffmap coalesce $ option $
-        (sws $ gte flow)
-            `sq` star ((sws $ geterm ',') `sqr` (sws $ gte flow))
-            `sql` option (sws $ geterm ',')
+        (eat flow)
+            `sq` star ((tok ',') `sqr` (eat flow))
+            `sql` option (tok ',')
   where coalesce Nothing = []
         coalesce (Just (v,vs)) = v:vs
 flow = ffmap Scalar word `choice` flow_collection
