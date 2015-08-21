@@ -124,6 +124,13 @@ plusLock p cs i = case (p `sqLock` starLock p) cs i of
     Nothing -> Nothing
     Just ((t,ts), cs', i') -> Just (t:ts, cs', i')
 
+sepEndBy :: Parse a -> Parse b -> Parse [b]
+sepEndBy sep elt =
+    ffmap coalesce $ option $
+        elt `sq` star (sep `sqr` elt) `sql` option sep
+  where coalesce Nothing = []
+        coalesce (Just (v,vs)) = v:vs
+
 gt = indent IGt
 gte = indent IGte
 
@@ -159,19 +166,18 @@ ws = star $ termSatisfy (flip elem " \n")
 eat = (`sql` ws)
 tok = eat . term
 
-word = maxInd $ plus $ termSatisfy isAlphaNum
-
-list = ffmap Sequence $ plusLock item
-item = ffmap snd $ eat (term '-') `sqLock` gt (other `choice` list)
-other = ffmap Scalar (eat word) `choice` flow_collection
-flow_collection = flow_list
+flow_scalar = ffmap Scalar $ eat $ maxInd $ plus $ termSatisfy isAlphaNum
 flow_list = ffmap Sequence $ between (tok '[') (tok ']') $
-    ffmap coalesce $ option $
-        (eat flow)
-            `sq` star ((tok ',') `sqr` (eat flow))
-            `sql` option (tok ',')
-  where coalesce Nothing = []
-        coalesce (Just (v,vs)) = v:vs
-flow = ffmap Scalar word `choice` flow_collection
+    sepEndBy (tok ',') flow_node
+flow_collection = flow_list
+flow_node = flow_scalar `choice` flow_collection
 
-yamelot = list
+block_scalar = flow_scalar
+block_list = ffmap Sequence $ plusLock item
+  where item = ffmap snd $ tok '-' `sqLock`
+                 gt ( block_list
+             `choice` block_scalar
+             `choice` flow_collection
+                    )
+
+yamelot = block_list
