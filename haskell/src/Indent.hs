@@ -244,4 +244,4 @@ block_list = fmap Sequence $ plusLock item
              `choice` flow_collection
                     )
 
-yamelot = block_list
+yamelot = ws `sqr` block_list
