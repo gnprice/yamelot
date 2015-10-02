@@ -30,7 +30,7 @@ pip install pytest
 
 # run tests!
 # drop the "-k {thingy}" part to run all impls.
-py.test tests -k libyaml
+py.test -k libyaml
 ```
 
 `libyaml` in this example may be replaced by any other suffix of the `integration_runner` files.
