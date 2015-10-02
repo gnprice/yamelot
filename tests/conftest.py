@@ -53,6 +53,9 @@ class IntegrationTestFile(pytest.File):
         return items
 
 
+setups_done = set()
+
+
 class IntegrationTestItem(pytest.Item):
     def __init__(self, name, parent, ygp, expected, executable):
         super(IntegrationTestItem, self).__init__(name, parent)
@@ -61,7 +64,14 @@ class IntegrationTestItem(pytest.Item):
         self._executable = executable
         self.obj = lambda: 'a'  # Fake for xfail marks
 
+    def maybe_setup(self):
+        setup_file = self._executable.replace('/integration_runner.', '/integration_setup.')
+        if setup_file in setups and setup_file not in setups_done:
+            subprocess.check_call(setup_file)
+            setups_done.add(setup_file)
+
     def runtest(self):
+        self.maybe_setup()
         if self._expected is None:
             try:
                 output = call_with_input(self._executable, self._ygp)
@@ -175,12 +185,15 @@ class IntegrationTestFailureRepr(object):
 
 
 runners = set()
+setups = set()
 
 
 def pytest_configure(config):
     global runners
+    global setups
     path = py.path.local(config.invocation_dir)
-    runners |= set(str(irp) for irp in glob.glob('./*/integration_runner.*'))
+    runners |= set(str(f) for f in glob.glob('./*/integration_runner.*'))
+    setups |= set(str(f) for f in glob.glob('./*/integration_setup.*'))
 
 
 def pytest_collect_file(parent, path):
