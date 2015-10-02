@@ -38,9 +38,9 @@ instance Monad Parse where
         -- lock
         case runParse m cs i of
             Nothing -> Nothing
-            Just (a, cs', i') -> case runParse (f a) cs' (followLock Loose i i') of
+            Just (a, cs', i') -> case runParse (f a) cs' (lockRightConstraint Loose i i') of
                 Nothing -> Nothing
-                Just (b, cs'', i'') -> Just (b, cs'', afterLock Loose i' i'')
+                Just (b, cs'', i'') -> Just (b, cs'', lockWholeResult Loose i' i'')
 
 instance Applicative Parse where
     pure = return
@@ -73,25 +73,32 @@ term c = termSatisfy (==c)
 
 munge = map fst
 
+{-
+  Lock: the whole, the left, and the right all have the same indentation
+  Loose: the whole and left have the same indentation,
+         and the right is unconstrained
+  Band: the whole and left have the same indentation, and the right has
+        the same constraint as the whole and left
+-}
 data Lock = Lock | Loose | Band
 
-followLock :: Lock -> Range -> Range -> Range
-followLock Lock  _ inner = inner
-followLock Loose _ _     = (0, inf)
-followLock Band  outer _ = outer
+lockRightConstraint :: Lock -> Range -> Range -> Range
+lockRightConstraint Lock  _               leftResult = leftResult
+lockRightConstraint Loose _               _          = (0, inf)
+lockRightConstraint Band  wholeConstraint _          = wholeConstraint
 
-afterLock :: Lock -> Range -> Range -> Range
-afterLock Lock  _     inner = inner
-afterLock Loose outer _     = outer
-afterLock Band  outer _     = outer
+lockWholeResult :: Lock -> Range -> Range -> Range
+lockWholeResult Lock  _          rightResult = rightResult
+lockWholeResult Loose leftResult _           = leftResult
+lockWholeResult Band  leftResult _           = leftResult
 
 sqAny :: Lock -> Parse a -> Parse b -> Parse (a,b)
 sqAny l p1 p2 = Parse $ \cs i ->
     case runParse p1 cs i of
         Nothing -> Nothing
-        Just (a, cs', i') -> case runParse p2 cs' (followLock l i i') of
+        Just (a, cs', i') -> case runParse p2 cs' (lockRightConstraint l i i') of
             Nothing -> Nothing
-            Just (b, cs'', i'') -> Just ((a,b), cs'', afterLock l i' i'')
+            Just (b, cs'', i'') -> Just ((a,b), cs'', lockWholeResult l i' i'')
 
 sq = sqAny Loose
 sqLock = sqAny Lock
@@ -124,9 +131,9 @@ starAny l p = Parse $ \cs i ->
     case runParse p cs i of
         Nothing -> trace ("star empty: " ++ show (munge cs, i)) $ Just ([], cs, i)
         Just (a, cs', i') ->
-            case runParse (starAny l p) cs' (followLock l i i') of
+            case runParse (starAny l p) cs' (lockRightConstraint l i i') of
                 Nothing -> Nothing
-                Just (as, cs'', i'') -> trace ("star: " ++ show (munge cs, munge cs'', i'')) $ Just (a:as, cs'', afterLock l i' i'')
+                Just (as, cs'', i'') -> trace ("star: " ++ show (munge cs, munge cs'', i'')) $ Just (a:as, cs'', lockWholeResult l i' i'')
 
 star = starAny Loose
 starLock = starAny Lock
