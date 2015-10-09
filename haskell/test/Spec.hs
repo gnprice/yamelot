@@ -43,6 +43,6 @@ main = do mapM_ (uncurry checkParse) [
             , (False, "- |\n     a\n  b")
             , (True,  "- |\n  a\n     b")
          -- , (True,  "- |\n a\n\n b")
-         -- , (True,  "- |\n a\n \n b")
+            , (True,  "- |\n a\n \n b")
             , (True,  "- |\n a\n  \n b") -- and preserves that space
             ]

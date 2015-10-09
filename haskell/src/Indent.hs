@@ -207,6 +207,14 @@ Easy(??) parts that will cover a bunch more tests:
 * numbers
 -}
 
+-- Fail if the parse results in an empty string.
+nonEmpty :: Parse String -> Parse String
+nonEmpty p  = Parse $ \cs i ->
+    case runParse p cs i of
+        Nothing -> Nothing
+        Just ("", cs, i) -> Nothing
+        Just value -> Just value
+
 ws = star $ termSatisfy (flip elem " \n")
 eat = (`sql` ws)
 tok = eat . term
@@ -234,8 +242,8 @@ literal_scalar = traceParse "literal" $ eat $ fmap join $
     (gte $ tok '|') `sqLock` gte (firstLine `sqLock` restLines)
   where firstLine = traceParse "firstLine" $ lineContents
         restLines = star $ stripIndent $ traceParse "line" lineContents
-        lineContents = fmap squash $
-            plus (termSatisfy (/='\n')) `sq` option (term '\n')
+        lineContents = nonEmpty $ fmap squash $
+            star (termSatisfy (/='\n')) `sq` option (term '\n')
           where squash (l, Nothing) = l
                 squash (l, Just nl) = l ++ [nl]
         join (_, (line, lines)) = Scalar $ concat (line:lines)
