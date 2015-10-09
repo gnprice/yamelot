@@ -32,7 +32,17 @@ main = do mapM_ (uncurry checkParse) [
             , (True,  "-\n  -\n    [bbbb, cc ,\n  aa,]")
             , (True,  "-\n  -\n    [bbbb, cc ,\n  aa,]")
             , (True,  "-\n -\n  [1,\n2]")
+            -- Literal scalars
             , (False, "-\n -\n       |\n ab")
             , (True,  "-\n -\n       |\n  ab")
+            , (True,  "-\n -\n       |\n  ab\n")
             , (True,  "-\n -\n       |\n   ab")
+            , (True,  "- |\n  a\n- b")
+            , (True,  " - |\n   a\n - b")
+            , (True,  "- |\n  a\n  b")
+            , (False, "- |\n     a\n  b")
+            , (True,  "- |\n  a\n     b")
+         -- , (True,  "- |\n a\n\n b")
+         -- , (True,  "- |\n a\n \n b")
+            , (True,  "- |\n a\n  \n b") -- and preserves that space
             ]

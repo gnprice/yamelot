@@ -199,7 +199,6 @@ run cs p = fmap (\(t,xs,_) -> (t,munge xs)) (runParse p (ann cs) (0, inf))
 
 {-
 Possible next hard parts:
-* literal scalars
 * literal scalars, with explicit indentation
 * more-complete plain scalars
 
@@ -231,13 +230,17 @@ traceParse msg p = Parse $ \cs i ->
     Nothing -> trace (header ++ "fail") $ Nothing
     r@(Just (a, cs', i')) -> trace (header ++ show a) $ r
 
--- TODO these aren't quite right -- they're like forced-indentation-zero.
-literal_scalar = traceParse "literal" $ fmap join $
-    (gte $ tokLines '|') `sqLock` plusLock line
-  where line = traceParse "line" $ stripIndent $ plus $ termSatisfy (/='\n')
-        join (_, lines) = Scalar $ concat lines
+literal_scalar = traceParse "literal" $ eat $ fmap join $
+    (gte $ tok '|') `sqLock` gte (firstLine `sqLock` restLines)
+  where firstLine = traceParse "firstLine" $ lineContents
+        restLines = star $ stripIndent $ traceParse "line" lineContents
+        lineContents = fmap squash $
+            plus (termSatisfy (/='\n')) `sq` option (term '\n')
+          where squash (l, Nothing) = l
+                squash (l, Just nl) = l ++ [nl]
+        join (_, (line, lines)) = Scalar $ concat (line:lines)
 block_scalar = flow_scalar `choice` literal_scalar
-block_list = fmap Sequence $ plusLock item
+block_list = fmap Sequence $ plusLock $ traceParse "list_item" item
   where item = fmap snd $ tok '-' `sqLock`
                  gt ( block_list
              `choice` block_scalar
