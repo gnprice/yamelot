@@ -1,0 +1,92 @@
+### Constraints on indentation: reject too far left...
+-
+ -
+       |
+ ab
+!!!!!!!!!!
+========================================
+### ... accept minimum ...
+-
+ -
+       |
+  ab
+----------
+[["ab\n"]]
+========================================
+### ... and accept more, without leaking it into the value.
+-
+ -
+       |
+   ab
+----------
+[["ab\n"]]
+========================================
+### Properly handle lack of final newline.
+ATTR chomped
+-
+ -
+       |
+  ab
+----------
+[["ab"]]
+========================================
+### Simple lists...
+- |
+  a
+- b
+----------
+["a\n","b"]
+========================================
+### ... including indented.
+ - |
+   a
+ - b
+----------
+["a\n","b"]
+========================================
+### Multiple lines...
+- |
+  a
+  b
+----------
+["a\nb\n"]
+========================================
+### ... but respect initial indentation ...
+- |
+     a
+  b
+!!!!!!!!!!
+========================================
+### ... and incorporate later indentation.
+- |
+  a
+     b
+----------
+["a\n   b\n"]
+========================================
+### Accept blank lines with less indentation...
+ATTR Xhaskell
+- |
+ a
+
+ b
+----------
+["a\n\nb\n"]
+========================================
+### ... or same ...
+ATTR Xhaskell
+- |
+ a
+ 
+ b
+----------
+["a\n\nb\n"]
+========================================
+### ... or more, and incorporate that.
+ATTR Xhaskell
+- |
+ a
+  
+ b
+----------
+["a\n \nb\n"]
