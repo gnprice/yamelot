@@ -1,6 +1,6 @@
 name:                yamelot
 version:             0.1.0.0
-synopsis:            Initial project template from stack
+synopsis:            Yamelot parser
 description:         Please see README.md
 homepage:            http://github.com/gnprice/yamelot
 license:             MIT
@@ -39,4 +39,4 @@ test-suite yamelot-test
 
 source-repository head
   type:     git
-  location: https://github.com/githubuser/yamelot
+  location: https://github.com/gnprice/yamelot
