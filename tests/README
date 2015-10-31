@@ -1,0 +1,22 @@
+Test cases are in data/.
+
+The format:
+ * Each file is a sequence of cases, separated by lines of 40 '='.
+ * Cases may contain comments, lines beginning with '###', which are
+   ignored.
+ * Excluding comments, a case consists of an optional attributes line;
+   an input document; and an expected result.
+ * An attributes line consists of 'ATTR ' followed by space-separated
+   attributes.  It must be the first line of the case.  The possible
+   attributes are
+    * 'chomped': the input document should be interpreted without its
+      final newline.
+    * "X$impl": the case should be treated as xfail for implementation
+      $impl.  E.g., 'Xhaskell' means the implementation 'haskell' is
+      expected to fail on this case.
+ * The input document is whatever text comes before the expected
+   result.  There is no mechanism for escaping the separators,
+   comments, and attributes lines of this format.
+ * The expected result is either a line consisting of 10 '!', meaning
+   a parse error, or a line of 10 '-' followed by a JSON document
+   expressing the intended parse.
