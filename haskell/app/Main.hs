@@ -87,7 +87,6 @@ runTestFile path = do
       let cases = splitCases input
       putStrLn ("file " ++ path ++ ": " ++ show (length cases) ++ " cases")
       mapM_ runTestCase cases
-      exitSuccess
   where splitCases text = hd : if BC.null tl then []
                                else splitCases (BC.drop (BC.length sep) tl)
           where (hd, tl) = BC.breakSubstring sep text
