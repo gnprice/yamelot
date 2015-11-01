@@ -9,6 +9,7 @@ import Data.Maybe
 import Data.String
 import qualified Regex.RE2 as RE
 import System.Environment
+import System.FilePath
 import System.IO
 import System.Console.GetOpt
 import System.Exit
@@ -43,8 +44,8 @@ yamelotToJson = do
 
 -- Running a sequence of tests
 
-runTestCase :: String -> IO ()
-runTestCase caseStr =
+runTestCase :: BC.ByteString -> IO ()
+runTestCase caseBytes =
     case RE.find pattern case_ of
       Nothing -> die ("parse error in test case: " ++ show case_)
       Just m -> if expected == actual
@@ -64,8 +65,7 @@ runTestCase caseStr =
                 Just (v, []) -> Just (BC.pack (dumpJson v))
                 Just (v, _) -> Nothing
                 Nothing -> Nothing
-  where caseBytes = BC.pack caseStr
-        (case_, _) = RE.replaceAll "(?m)^###.*\n?" caseBytes ""
+  where (case_, _) = RE.replaceAll "(?m)^###.*\n?" caseBytes ""
         pattern :: RE.Pattern
         pattern = fromString ("(?s)\\A" ++
             "(?:ATTR ([^\n]*)\n)?" ++
@@ -81,14 +81,21 @@ runTestCase caseStr =
           putStrLn ("  but got " ++ render actual)
           where render res = BC.unpack (fromMaybe "error" res)
 
-runTests :: IO ()
-runTests = do
-      input <- getContents
-      let cases = splitOn caseSeparator input
-      putStrLn (show (length cases) ++ " test cases")
+runTestFile :: FilePath -> IO ()
+runTestFile path = do
+      input <- BC.readFile path
+      let cases = splitCases input
+      putStrLn ("file " ++ path ++ ": " ++ show (length cases) ++ " cases")
       mapM_ runTestCase cases
       exitSuccess
-  where caseSeparator = replicate 40 '=' ++ "\n"
+  where splitCases text = hd : if BC.null tl then []
+                               else splitCases (BC.drop (BC.length sep) tl)
+          where (hd, tl) = BC.breakSubstring sep text
+                sep = BC.append (BC.replicate 40 '=') ("\n")
+
+runTests :: [FilePath] -> IO ()
+runTests positionals = do
+      mapM_ runTestFile positionals
 
 -- The command line
 
@@ -101,7 +108,7 @@ options :: [OptDescr (Options -> IO Options)]
 options = [
     Option "t" ["test"]
       (NoArg (\opt -> return opt { optTest = True }))
-      "Treat the input as a set of test cases"
+      "Take input files as sets of test cases"
   , Option "" ["help"]
       (NoArg (\_ -> do name <- getProgName
                        hPutStrLn stderr (usageInfo name options)
@@ -115,6 +122,6 @@ main = do
     let (actions, positionals, errors) = getOpt RequireOrder options args
     opts <- foldl (>>=) (return startOptions) actions
     if optTest opts then
-      runTests
+      runTests positionals
     else
       yamelotToJson
