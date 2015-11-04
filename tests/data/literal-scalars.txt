@@ -22,7 +22,7 @@
 [["ab\n"]]
 ========================================
 ### Properly handle lack of final newline.
-ATTR chomped
+ATTR chomped Xhaskell
 -
  -
        |
@@ -65,7 +65,6 @@ ATTR chomped
 ["a\n   b\n"]
 ========================================
 ### Accept blank lines with less indentation...
-ATTR Xhaskell
 - |
  a
 
@@ -74,7 +73,6 @@ ATTR Xhaskell
 ["a\n\nb\n"]
 ========================================
 ### ... or same ...
-ATTR Xhaskell
 - |
  a
  
@@ -83,10 +81,41 @@ ATTR Xhaskell
 ["a\n\nb\n"]
 ========================================
 ### ... or more, and incorporate that.
-ATTR Xhaskell
 - |
  a
   
  b
 ----------
 ["a\n \nb\n"]
+========================================
+### Ignore blank lines before the first non-blank ...
+- |
+
+ a
+    b
+----------
+["a\n   b\n"]
+========================================
+### ... even if they're deeply indented ...
+- |
+        
+ a
+    b
+----------
+["a\n   b\n"]
+========================================
+### ... and after the last non-blank ...
+ATTR Xhaskell
+- |
+ a
+
+----------
+["a\n"]
+========================================
+### ... even if they're deeply indented too.
+ATTR Xhaskell
+- |
+ a
+        
+----------
+["a\n"]

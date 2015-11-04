@@ -56,6 +56,9 @@ data Value = Scalar String
            | Sequence [Value]
   deriving (Show)
 
+failParse :: Parse a
+failParse = Parse $ \cs i -> Nothing
+
 epsilon :: Parse ()
 epsilon = Parse $ \cs i -> Just ((), cs, i)
 
@@ -63,10 +66,8 @@ termSatisfy :: (Char -> Bool) -> Parse Char
 termSatisfy pred = Parse go
     where go [] _ = Nothing
           go ((c,k):cs) i
-            | pred c && k `inRange` i
-            = trace ("term: " ++ show (munge ((c,k):cs), k, i)) $ Just (c, cs, (k, k))
-            | otherwise
-            = trace ("term failed: " ++ show (munge ((c,k):cs), k, i)) $ Nothing
+            | pred c && k `inRange` i = Just (c, cs, (k, k))
+            | otherwise               = Nothing
 
 term :: Char -> Parse Char
 term c = termSatisfy (==c)
@@ -129,18 +130,23 @@ option p = Parse $ \cs i ->
 starAny :: Lock -> Parse a -> Parse [a]
 starAny l p = Parse $ \cs i ->
     case runParse p cs i of
-        Nothing -> trace ("star empty: " ++ show (munge cs, i)) $ Just ([], cs, i)
+        Nothing -> Just ([], cs, i)
         Just (a, cs', i') ->
             case runParse (starAny l p) cs' (lockRightConstraint l i i') of
                 Nothing -> Nothing
-                Just (as, cs'', i'') -> trace ("star: " ++ show (munge cs, munge cs'', i'')) $ Just (a:as, cs'', lockWholeResult l i' i'')
+                Just (as, cs'', i'') -> Just (a:as, cs'', lockWholeResult l i' i'')
 
 star = starAny Loose
 starLock = starAny Lock
 
-timesAny :: Lock -> Int -> Parse a -> Parse [a]
-timesAny l 0 p = fmap (const []) epsilon
-timesAny l n p = fmap (uncurry (:)) $ sqAny l p $ timesAny l (n-1) p
+timesAny :: Lock -> (Int, Int) -> Parse a -> Parse [a]
+timesAny l (lo,hi) p = case (lo, hi) of
+    (0, 0) -> fmap (const []) epsilon
+    (0, hi) -> more (timesAny l (0,hi-1) p) `choice` fmap (const []) epsilon
+    (lo, hi) -> more (timesAny l (lo-1,hi-1) p)
+  where more pp = fmap (uncurry (:)) $ sqAny l p $ pp
+
+times = timesAny Loose
 
 data Indent = IGt | IGte | IAll
 
@@ -201,6 +207,13 @@ run cs p = fmap (\(t,xs,_) -> (t,munge xs)) (runParse p (ann cs) (0, inf))
 Possible next hard parts:
 * literal scalars, with explicit indentation
 * more-complete plain scalars
+* Handle lack of trailing newline again, more cleanly than ``option (term '\n')``.
+  Probably add an EOF sentinel, make something that's "newline or EOF".
+
+Annoying parts, should fix:
+* The convention where each top-level node is responsible for consuming
+  the whitespace that follows it, right up through the indentation of the
+  next thing, is kind of odd and probably confusing.
 
 Easy(??) parts that will cover a bunch more tests:
 * mappings
@@ -222,9 +235,16 @@ wsLines = star $ star (term ' ') `sq` term '\n'
 eatLines = (`sql` wsLines)
 tokLines = eatLines . term
 
-stripIndent :: Parse a -> Parse a
-stripIndent p = Parse $ \cs i ->
-  runParse (timesAny Loose (fst i) (iall $ term ' ') `sqr` p) cs i
+useIndent :: (Range -> Parse a) -> Parse a
+useIndent f = Parse $ \cs i -> runParse (f i) cs i
+
+fullIndent :: Parse String
+fullIndent = useIndent (\i -> times (fst i, fst i) (iall $ term ' '))
+
+subIndent :: Parse String
+subIndent = useIndent $ \i -> case fst i of
+    0 -> failParse
+    l -> times (0, l-1) (iall $ term ' ')
 
 flow_scalar = fmap Scalar $ eat $ maxInd $ plus $ termSatisfy isAlphaNum
 flow_list = fmap Sequence $ between (tok '[') (tok ']') $
@@ -236,16 +256,16 @@ traceParse msg p = Parse $ \cs i ->
   let header = msg ++ " " ++ show i ++ ": " in
   case runParse p cs i of
     Nothing -> trace (header ++ "fail") $ Nothing
-    r@(Just (a, cs', i')) -> trace (header ++ show a) $ r
+    r@(Just (a, cs', i')) -> trace (header ++ show a ++ " (rest " ++ (show (munge cs')) ++ ")") $ r
 
 literal_scalar = traceParse "literal" $ eat $ fmap join $
-    (gte $ tok '|') `sqLock` gte (firstLine `sqLock` restLines)
+    (gte $ tok '|') `sqLock` gte (firstLine `sqLock` starLock restLine)
   where firstLine = traceParse "firstLine" $ lineContents
-        restLines = star $ stripIndent $ traceParse "line" lineContents
-        lineContents = nonEmpty $ fmap squash $
-            star (termSatisfy (/='\n')) `sq` option (term '\n')
-          where squash (l, Nothing) = l
-                squash (l, Just nl) = l ++ [nl]
+        restLine = (traceParse "short blank" $ fmap (:[]) $ subIndent `sqr` term '\n')
+            `choice` (traceParse "indented line" $ fullIndent `sqr` lineContents)
+        lineContents = fmap squash $
+            star (termSatisfy (/='\n')) `sq` term '\n'
+          where squash (l, nl) = l ++ [nl]
         join (_, (line, lines)) = Scalar $ concat (line:lines)
 block_scalar = flow_scalar `choice` literal_scalar
 block_list = fmap Sequence $ plusLock $ traceParse "list_item" item
