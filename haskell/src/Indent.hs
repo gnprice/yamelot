@@ -110,6 +110,12 @@ sql p1 p2 = fmap fst (p1 `sq` p2)
 sqr :: Parse a -> Parse b -> Parse b
 sqr p1 p2 = fmap snd (p1 `sq` p2)
 
+sqlLock :: Parse a -> Parse b -> Parse a
+sqlLock p1 p2 = fmap fst (p1 `sqLock` p2)
+
+sqrLock :: Parse a -> Parse b -> Parse b
+sqrLock p1 p2 = fmap snd (p1 `sqLock` p2)
+
 between :: Parse a -> Parse c -> Parse b -> Parse b
 between pl pr p = pl `sqr` p `sql` pr
 
@@ -258,15 +264,22 @@ traceParse msg p = Parse $ \cs i ->
     Nothing -> trace (header ++ "fail") $ Nothing
     r@(Just (a, cs', i')) -> trace (header ++ show a ++ " (rest " ++ (show (munge cs')) ++ ")") $ r
 
-literal_scalar = traceParse "literal" $ eat $ fmap join $
-    (gte $ tok '|') `sqLock` gte (firstLine `sqLock` starLock restLine)
-  where firstLine = traceParse "firstLine" $ lineContents
-        restLine = (traceParse "short blank" $ fmap (:[]) $ subIndent `sqr` term '\n')
-            `choice` (traceParse "indented line" $ fullIndent `sqr` lineContents)
-        lineContents = fmap squash $
-            star (termSatisfy (/='\n')) `sq` term '\n'
-          where squash (l, nl) = l ++ [nl]
-        join (_, (line, lines)) = Scalar $ concat (line:lines)
+literal_scalar = traceParse "literal" $ eat $
+    (gte $ tokLines '|') `sqrLock` gte contents
+  where contents = fmap join (nonblank `sqLock` starLock (
+                                  starLock blank `sqLock` nonblank))
+        join (line, rest) = Scalar $ concat (line : map join' rest)
+        join' (lines, line) = lines ++ [line]
+        nonblank = traceParse "nonblank" $ fmap squash $
+            -- WORK HERE -- is this even going to work? will the first
+            -- line get indentation right? also, take care of making
+            -- this actually have a non-space.
+            fullIndent `sqr` plus (termSatisfy (/='\n')) `sq` term '\n'
+        blank =   (traceParse "short blank" $ fmap (:[]) $
+                     subIndent `sqr` term '\n')
+         `choice` (traceParse "full blank" $ fmap squash $
+                     fullIndent `sqr` star (term ' ') `sq` term '\n')
+        squash (l, nl) = l ++ [nl]
 block_scalar = flow_scalar `choice` literal_scalar
 block_list = fmap Sequence $ plusLock $ traceParse "list_item" item
   where item = fmap snd $ tok '-' `sqLock`
